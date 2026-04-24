@@ -1,0 +1,40 @@
+# ========================
+# GLOBAL
+# ========================
+.DS_Store
+Thumbs.db
+*.log
+
+# ========================
+# IDE / EDITOR
+# ========================
+.vscode/
+.idea/
+*.iml
+
+# ========================
+# ENV FILES
+# ========================
+.env
+.env.* 
+
+# ========================
+# LARAVEL (BACKEND)
+# ========================
+backend/sipeka/vendor/
+backend/sipeka/node_modules/
+backend/sipeka/public/storage
+backend/sipeka/storage/*.key
+
+# ========================
+# FLUTTER (FRONTEND)
+# ========================
+frontend/sipeka/.dart_tool/
+frontend/sipeka/.packages
+frontend/sipeka/.pub/
+frontend/sipeka/build/
+
+# ========================
+# MISC
+# ========================
+coverage/
