@@ -165,4 +165,98 @@ class DioProvider{
     }
   }
 
+  // ════════════════════════════════════════════════════════════════════════════
+  // TAMBAHKAN method-method ini ke class DioProvider yang sudah ada
+  // di lib/providers/dio_provider.dart
+  // ════════════════════════════════════════════════════════════════════════════
+
+  // ── Tambahkan di dalam class DioProvider, setelah getKegiatanDetail() ────────
+
+    /// GET /api/kegiatan/{id}/realisasi
+    /// Mengembalikan data realisasi fisik + anggaran + keterangan + bukti per bulan
+    Future<Map<String, dynamic>?> getRealisasiDetail(int kegiatanId) async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token') ?? '';
+
+        final response = await Dio().get(
+          'http://10.0.2.2:8000/api/kegiatan/$kegiatanId/realisasi',
+          options: Options(headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          }),
+        );
+
+        print('getRealisasiDetail status: ${response.statusCode}');
+        print('getRealisasiDetail body: ${response.data}');
+
+        if (response.statusCode == 200 && response.data['success'] == true) {
+          return response.data['data'] as Map<String, dynamic>;
+        }
+        return null;
+      } catch (e, st) {
+        print('❌ getRealisasiDetail error: $e\n$st');
+        return null;
+      }
+    }
+
+    /// POST /api/realisasi
+    /// Simpan/update realisasi fisik + anggaran + keterangan satu bulan
+    Future<bool> postRealisasi({
+      required int kegiatanId,
+      required int bulan,
+      required double realisasiFisik,
+      required double realisasiAnggaran,
+      String? keterangan,
+    }) async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token') ?? '';
+
+        final response = await Dio().post(
+          'http://10.0.2.2:8000/api/realisasi',
+          data: {
+            'kegiatan_id':        kegiatanId,
+            'bulan':              bulan,
+            'realisasi_fisik':    realisasiFisik,
+            'realisasi_anggaran': realisasiAnggaran,
+            if (keterangan != null && keterangan.isNotEmpty)
+              'keterangan': keterangan,
+          },
+          options: Options(headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          }),
+        );
+
+        print('postRealisasi status: ${response.statusCode}');
+        print('postRealisasi body: ${response.data}');
+
+        return response.statusCode == 200 || response.statusCode == 201;
+      } on DioException catch (e) {
+        print('❌ postRealisasi DioException: ${e.response?.statusCode}');
+        print('Response body: ${e.response?.data}');
+        return false;
+      } catch (e, st) {
+        print('❌ postRealisasi error: $e\n$st');
+        return false;
+      }
+    }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // FILE DioProvider LENGKAP (ganti seluruh file dengan ini)
+  // ════════════════════════════════════════════════════════════════════════════
+
+  /*
+  import 'package:dio/dio.dart';
+  import 'package:shared_preferences/shared_preferences.dart';
+
+  class DioProvider {
+    // ... semua method yang sudah ada ...
+    
+    // Tambahkan kedua method di atas
+  }
+  */
+
 }

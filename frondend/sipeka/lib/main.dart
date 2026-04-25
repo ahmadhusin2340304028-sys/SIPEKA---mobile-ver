@@ -10,12 +10,14 @@ import 'core/theme/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/kegiatan_provider.dart';
 import 'providers/undangan_provider.dart';
+import 'providers/realisasi_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/kegiatan/kegiatan_screen.dart';
 import 'screens/kegiatan/detail_kegiatan_screen.dart';
 import 'screens/kegiatan/input_realisasi_screen.dart';
 import 'screens/undangan/undangan_screen.dart';
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +51,7 @@ class SipekaApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => KegiatanProvider()),
         ChangeNotifierProvider(create: (_) => UndanganProvider()),
+        ChangeNotifierProvider(create: (_) => RealisasiProvider()),
       ],
       child: MaterialApp(
         title: AppStrings.appName,

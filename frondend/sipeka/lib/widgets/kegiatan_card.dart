@@ -216,22 +216,25 @@ class _BidangBadge extends StatelessWidget {
   const _BidangBadge({required this.bidang});
 
   _BadgeStyle get _style {
-    switch (bidang.toLowerCase()) {
-      case 'infrastruktur':
+    switch (bidang) {
+      case 'Perencanaan dan Keuangan':
         return _BadgeStyle(
             bg: const Color(0xFFEFF6FF), fg: AppColors.primaryDark);
-      case 'perencanaan':
+      case 'Umum dan Kepgawaian':
         return _BadgeStyle(
             bg: const Color(0xFFF0FDF4), fg: const Color(0xFF166534));
-      case 'sdm':
+      case 'Perlindungan dan Jaminan Sosial':
         return _BadgeStyle(
             bg: const Color(0xFFFFF7ED), fg: const Color(0xFF92400E));
-      case 'kesehatan':
+      case 'Rehabilitasi Sosial':
         return _BadgeStyle(
             bg: const Color(0xFFFDF4FF), fg: const Color(0xFF6B21A8));
-      case 'teknologi':
+      case 'Pemberdayaan Sosial':
         return _BadgeStyle(
             bg: const Color(0xFFECFEFF), fg: const Color(0xFF155E75));
+      case 'Pemberdayaan Masyarakat':
+        return _BadgeStyle(
+            bg: const Color(0xFFECFEFF), fg: const Color.fromARGB(255, 103, 117, 21));
       default:
         return _BadgeStyle(
             bg: AppColors.surfaceGray, fg: AppColors.textMuted);
