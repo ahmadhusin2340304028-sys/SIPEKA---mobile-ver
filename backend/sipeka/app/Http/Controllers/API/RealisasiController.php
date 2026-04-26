@@ -27,13 +27,8 @@ class RealisasiController extends Controller
         $user     = $request->user();
         $kegiatan = Kegiatan::findOrFail($id);
 
-        // Staff hanya akses bidangnya
-        if ($user->isStaffBidang() && $kegiatan->bidang !== $user->getBidang()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Akses ditolak.',
-            ], 403);
-        }
+        // Data realisasi bersifat read-only, jadi semua role yang login boleh melihat.
+        // Hak input/update tetap dicek di endpoint store/upload/destroy.
 
         $fisik     = RealisasiFisik::where('kegiatan_id', $id)->orderBy('bulan')->get();
         $anggaran  = RealisasiAnggaran::where('kegiatan_id', $id)->orderBy('bulan')->get();

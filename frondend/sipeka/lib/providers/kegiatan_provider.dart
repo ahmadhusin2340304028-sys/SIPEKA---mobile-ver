@@ -45,12 +45,15 @@ class KegiatanProvider extends ChangeNotifier {
     }
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
-      list = list.where((k) =>
-        k.nama.toLowerCase().contains(q) ||
-        k.bidang.toLowerCase().contains(q) ||
-        k.program.toLowerCase().contains(q) ||
-        k.kegiatan.toLowerCase().contains(q)
-      ).toList();
+      list = list
+          .where(
+            (k) =>
+                k.nama.toLowerCase().contains(q) ||
+                k.bidang.toLowerCase().contains(q) ||
+                k.program.toLowerCase().contains(q) ||
+                k.kegiatan.toLowerCase().contains(q),
+          )
+          .toList();
     }
     return list;
   }
@@ -58,25 +61,25 @@ class KegiatanProvider extends ChangeNotifier {
   // ── Load Dashboard ────────────────────────────────────────────────────────
 
   Future<void> loadDashboard() async {
-  _loadState = LoadState.loading;
-  _errorMessage = null;
-  notifyListeners();
+    _loadState = LoadState.loading;
+    _errorMessage = null;
+    notifyListeners();
 
-  try {
-    final res = await DioProvider().getDashboardSummary();
-    print('=== loadDashboard res: $res'); // ← lihat ini
+    try {
+      final res = await DioProvider().getDashboardSummary();
+      print('=== loadDashboard res: $res'); // ← lihat ini
 
-    if (res != null && res.isNotEmpty) {
-      _summary = DashboardSummary.fromJson(res);
-      _loadState = LoadState.loaded;
+      if (res != null && res.isNotEmpty) {
+        _summary = DashboardSummary.fromJson(res);
+        _loadState = LoadState.loaded;
+      }
+    } catch (e, st) {
+      print('❌ Error: $e\n$st');
+      _loadState = LoadState.error;
     }
-  } catch (e, st) {
-    print('❌ Error: $e\n$st');
-    _loadState = LoadState.error;
-  }
 
-  notifyListeners();
-}
+    notifyListeners();
+  }
   // ── Load Kegiatan ─────────────────────────────────────────────────────────
 
   Future<void> loadKegiatan() async {
@@ -123,9 +126,13 @@ class KegiatanProvider extends ChangeNotifier {
 
   Future<void> loadKegiatanDetail(int id) async {
     try {
-      final data = await DioProvider().getKegiatanDetail(id);
-      if (data != null) {
-        _selected = KegiatanModel.fromJson(data);
+      final response = await DioProvider().getKegiatanDetail(id);
+
+      if (response != null) {
+        final detail = response['data'] is Map
+            ? Map<String, dynamic>.from(response['data'] as Map)
+            : response;
+        _selected = KegiatanModel.fromJson(detail);
         notifyListeners();
       }
     } catch (e) {
@@ -179,24 +186,36 @@ class KegiatanProvider extends ChangeNotifier {
 
       // Cari index bulan dari nama bulan
       const bulanList = [
-        'Januari','Februari','Maret','April','Mei','Juni',
-        'Juli','Agustus','September','Oktober','November','Desember'
+        'Januari',
+        'Februari',
+        'Maret',
+        'April',
+        'Mei',
+        'Juni',
+        'Juli',
+        'Agustus',
+        'September',
+        'Oktober',
+        'November',
+        'Desember',
       ];
       final bulanIndex = bulanList.indexOf(bulan) + 1;
 
       final response = await Dio().post(
-        'http://10.0.2.2:8000/api/realisasi',
+        '${DioProvider.baseApiUrl}/realisasi',
         data: {
-          'kegiatan_id':        kegiatanId,
-          'bulan':              bulanIndex,
-          'realisasi_fisik':    realisasiFisik,
+          'kegiatan_id': kegiatanId,
+          'bulan': bulanIndex,
+          'realisasi_fisik': realisasiFisik,
           'realisasi_anggaran': realisasiAnggaran,
           if (catatan != null) 'keterangan': catatan,
         },
-        options: Options(headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        }),
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
       );
 
       if (response.statusCode == 201 || response.statusCode == 200) {

@@ -1,12 +1,24 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class DioProvider{
+class DioProvider {
+  static String get baseApiUrl {
+    if (kIsWeb) return 'http://127.0.0.1:8000/api';
+
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return 'http://10.0.2.2:8000/api';
+      default:
+        return 'http://127.0.0.1:8000/api';
+    }
+  }
+
   // dio_provider.dart — getToken() juga simpan user data
   Future<bool> getToken(String username, String password) async {
     try {
       var response = await Dio().post(
-        'http://10.0.2.2:8000/api/login',
+        '$baseApiUrl/login',
         data: {'username': username, 'password': password},
       );
 
@@ -21,7 +33,6 @@ class DioProvider{
         return true;
       }
       return false;
-
     } catch (error) {
       return false;
     }
@@ -29,7 +40,7 @@ class DioProvider{
 
   Future<void> logout(String token) async {
     await Dio().post(
-      'http://10.0.2.2:8000/api/logout',
+      '$baseApiUrl/logout',
       options: Options(
         headers: {
           'Authorization': 'Bearer $token',
@@ -39,11 +50,11 @@ class DioProvider{
     );
   }
 
-    // ✅ return Map<String, dynamic>? bukan dynamic
+  // ✅ return Map<String, dynamic>? bukan dynamic
   Future<Map<String, dynamic>?> getUser(String token) async {
     try {
       var response = await Dio().get(
-        'http://10.0.2.2:8000/api/user',
+        '$baseApiUrl/user',
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -63,7 +74,6 @@ class DioProvider{
         return body as Map<String, dynamic>;
       }
       return null;
-
     } catch (error) {
       return null;
     }
@@ -77,14 +87,16 @@ class DioProvider{
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
-      print(  'Fetching dashboard summary with token: $token'); // Debug log
+      print('Fetching dashboard summary with token: $token'); // Debug log
 
       final response = await Dio().get(
-        'http://10.0.2.2:8000/api/dashboard/summary',
-        options: Options(headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        }),
+        '$baseApiUrl/dashboard/summary',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
       );
 
       print('Dashboard status: ${response.statusCode}');
@@ -111,15 +123,17 @@ class DioProvider{
       final token = prefs.getString('token') ?? '';
 
       final response = await Dio().get(
-        'http://10.0.2.2:8000/api/kegiatan',
+        '$baseApiUrl/kegiatan',
         queryParameters: {
           if (search != null && search.isNotEmpty) 'search': search,
           if (tahun != null) 'tahun': tahun,
         },
-        options: Options(headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        }),
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
       );
 
       print('getKegiatan status: ${response.statusCode}');
@@ -134,9 +148,8 @@ class DioProvider{
         if (body is List) return body;
       }
       return null;
-
     } catch (e, st) {
-      print('❌ getKegiatan error: $e');  // ✅ jangan telan error
+      print('❌ getKegiatan error: $e'); // ✅ jangan telan error
       print('Stack: $st');
       return null;
     }
@@ -148,14 +161,16 @@ class DioProvider{
       final token = prefs.getString('token') ?? '';
 
       final response = await Dio().get(
-        'http://10.0.2.2:8000/api/kegiatan/$id',
-        options: Options(headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        }),
+        '$baseApiUrl/kegiatan/$id',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
       );
-        print('Fetched kegiatan detail data: ${response.data}'); // Debug log
-      
+      print('Fetched kegiatan detail data: ${response.data}'); // Debug log
+
       if (response.statusCode == 200) {
         return response.data['data'] as Map<String, dynamic>;
       }
@@ -172,79 +187,130 @@ class DioProvider{
 
   // ── Tambahkan di dalam class DioProvider, setelah getKegiatanDetail() ────────
 
-    /// GET /api/kegiatan/{id}/realisasi
-    /// Mengembalikan data realisasi fisik + anggaran + keterangan + bukti per bulan
-    Future<Map<String, dynamic>?> getRealisasiDetail(int kegiatanId) async {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString('token') ?? '';
+  /// GET /api/kegiatan/{id}/realisasi
+  /// Mengembalikan data realisasi fisik + anggaran + keterangan + bukti per bulan
+  Future<Map<String, dynamic>?> getRealisasiDetail(int kegiatanId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
 
-        final response = await Dio().get(
-          'http://10.0.2.2:8000/api/kegiatan/$kegiatanId/realisasi',
-          options: Options(headers: {
+      final response = await Dio().get(
+        '$baseApiUrl/kegiatan/$kegiatanId/realisasi',
+        options: Options(
+          headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
-          }),
-        );
-
-        print('getRealisasiDetail status: ${response.statusCode}');
-        print('getRealisasiDetail body: ${response.data}');
-
-        if (response.statusCode == 200 && response.data['success'] == true) {
-          return response.data['data'] as Map<String, dynamic>;
-        }
-        return null;
-      } catch (e, st) {
-        print('❌ getRealisasiDetail error: $e\n$st');
-        return null;
-      }
-    }
-
-    /// POST /api/realisasi
-    /// Simpan/update realisasi fisik + anggaran + keterangan satu bulan
-    Future<bool> postRealisasi({
-      required int kegiatanId,
-      required int bulan,
-      required double realisasiFisik,
-      required double realisasiAnggaran,
-      String? keterangan,
-    }) async {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString('token') ?? '';
-
-        final response = await Dio().post(
-          'http://10.0.2.2:8000/api/realisasi',
-          data: {
-            'kegiatan_id':        kegiatanId,
-            'bulan':              bulan,
-            'realisasi_fisik':    realisasiFisik,
-            'realisasi_anggaran': realisasiAnggaran,
-            if (keterangan != null && keterangan.isNotEmpty)
-              'keterangan': keterangan,
           },
-          options: Options(headers: {
+        ),
+      );
+
+      print('getRealisasiDetail status: ${response.statusCode}');
+      print('getRealisasiDetail body: ${response.data}');
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e, st) {
+      print('❌ getRealisasiDetail error: $e\n$st');
+      return null;
+    }
+  }
+
+  /// POST /api/realisasi
+  /// Simpan/update realisasi fisik + anggaran + keterangan satu bulan
+  Future<bool> postRealisasi({
+    required int kegiatanId,
+    required int bulan,
+    required double realisasiFisik,
+    required double realisasiAnggaran,
+    String? keterangan,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      final response = await Dio().post(
+        '$baseApiUrl/realisasi',
+        data: {
+          'kegiatan_id': kegiatanId,
+          'bulan': bulan,
+          'realisasi_fisik': realisasiFisik,
+          'realisasi_anggaran': realisasiAnggaran,
+          if (keterangan != null && keterangan.isNotEmpty)
+            'keterangan': keterangan,
+        },
+        options: Options(
+          headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-          }),
-        );
+          },
+        ),
+      );
 
-        print('postRealisasi status: ${response.statusCode}');
-        print('postRealisasi body: ${response.data}');
+      print('postRealisasi status: ${response.statusCode}');
+      print('postRealisasi body: ${response.data}');
 
-        return response.statusCode == 200 || response.statusCode == 201;
-      } on DioException catch (e) {
-        print('❌ postRealisasi DioException: ${e.response?.statusCode}');
-        print('Response body: ${e.response?.data}');
-        return false;
-      } catch (e, st) {
-        print('❌ postRealisasi error: $e\n$st');
-        return false;
-      }
+      return response.statusCode == 200 || response.statusCode == 201;
+    } on DioException catch (e) {
+      print('❌ postRealisasi DioException: ${e.response?.statusCode}');
+      print('Response body: ${e.response?.data}');
+      return false;
+    } catch (e, st) {
+      print('❌ postRealisasi error: $e\n$st');
+      return false;
     }
+  }
 
   // ════════════════════════════════════════════════════════════════════════════
+  /// POST /api/upload-bukti
+  /// Upload atau ganti file bukti untuk satu kegiatan dan bulan.
+  Future<Map<String, dynamic>?> uploadBukti({
+    required int kegiatanId,
+    required int bulan,
+    required String fileName,
+    required List<int> fileBytes,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      final response = await Dio().post(
+        '$baseApiUrl/upload-bukti',
+        data: FormData.fromMap({
+          'kegiatan_id': kegiatanId,
+          'bulan': bulan,
+          'file': MultipartFile.fromBytes(fileBytes, filename: fileName),
+        }),
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      print('uploadBukti status: ${response.statusCode}');
+      print('uploadBukti body: ${response.data}');
+
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          response.data != null) {
+        final body = response.data;
+        if (body is Map<String, dynamic>) return body;
+        if (body is Map) return Map<String, dynamic>.from(body);
+      }
+      return null;
+    } on DioException catch (e) {
+      print('uploadBukti DioException: ${e.response?.statusCode}');
+      print('Response body: ${e.response?.data}');
+      return null;
+    } catch (e, st) {
+      print('uploadBukti error: $e\n$st');
+      return null;
+    }
+  }
+
   // FILE DioProvider LENGKAP (ganti seluruh file dengan ini)
   // ════════════════════════════════════════════════════════════════════════════
 
@@ -258,5 +324,4 @@ class DioProvider{
     // Tambahkan kedua method di atas
   }
   */
-
 }

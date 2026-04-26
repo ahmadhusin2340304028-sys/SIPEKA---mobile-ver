@@ -18,7 +18,11 @@ class RealisasiBulanDetail {
     this.bukti,
   });
 
-  bool get hasData => fisik != null || anggaran != null;
+  bool get hasData =>
+      fisik != null ||
+      anggaran != null ||
+      (keterangan?.trim().isNotEmpty ?? false) ||
+      bukti != null;
 
   static double? _toDoubleNullable(dynamic v) {
     if (v == null) return null;
@@ -30,15 +34,20 @@ class RealisasiBulanDetail {
 
   factory RealisasiBulanDetail.fromJson(Map<String, dynamic> json) {
     return RealisasiBulanDetail(
-      bulan:      json['bulan'] as int,
-      namaBulan:  json['nama_bulan'] ?? '',
-      fisik:      _toDoubleNullable(json['fisik']),
-      anggaran:   _toDoubleNullable(json['anggaran']),
+      bulan: json['bulan'] as int,
+      namaBulan: json['nama_bulan'] ?? '',
+      fisik: _toDoubleNullable(json['fisik']),
+      anggaran: _toDoubleNullable(json['anggaran']),
       keterangan: json['keterangan'] as String?,
-      bukti:      json['bukti'] != null && (json['bukti'] as Map).isNotEmpty
-                    ? BuktiDetail.fromJson(json['bukti'] as Map<String, dynamic>)
-                    : null,
+      bukti: _parseBukti(json['bukti']),
     );
+  }
+
+  static BuktiDetail? _parseBukti(dynamic raw) {
+    if (raw is Map && raw.isNotEmpty) {
+      return BuktiDetail.fromJson(Map<String, dynamic>.from(raw));
+    }
+    return null;
   }
 }
 
@@ -65,10 +74,14 @@ class BuktiDetail {
 
   factory BuktiDetail.fromJson(Map<String, dynamic> json) {
     return BuktiDetail(
-      id:       json['id'] as int,
-      bulan:    json['bulan'] as int,
+      id: json['id'] is int
+          ? json['id'] as int
+          : int.tryParse('${json['id']}') ?? 0,
+      bulan: json['bulan'] is int
+          ? json['bulan'] as int
+          : int.tryParse('${json['bulan']}') ?? 0,
       filePath: json['file_path'] ?? '',
-      fileUrl:  json['file_url'] as String?,
+      fileUrl: json['file_url'] as String?,
     );
   }
 }
@@ -104,14 +117,13 @@ class RealisasiKegiatan {
   factory RealisasiKegiatan.fromJson(Map<String, dynamic> json) {
     final perBulanRaw = json['per_bulan'] as List<dynamic>? ?? [];
     return RealisasiKegiatan(
-      kegiatanId:   json['kegiatan_id'] as int,
+      kegiatanId: json['kegiatan_id'] as int,
       kegiatanNama: json['kegiatan_nama'] ?? '',
       paguAnggaran: _d(json['pagu_anggaran']),
-      perBulan:     perBulanRaw
-                      .map((e) => RealisasiBulanDetail.fromJson(
-                            e as Map<String, dynamic>))
-                      .toList(),
-      totalFisik:   _d(json['total_fisik']),
+      perBulan: perBulanRaw
+          .map((e) => RealisasiBulanDetail.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      totalFisik: _d(json['total_fisik']),
       totalAnggaran: _d(json['total_anggaran']),
       persenAnggaran: _d(json['persen_anggaran']),
     );

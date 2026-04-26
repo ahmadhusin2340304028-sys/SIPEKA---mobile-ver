@@ -25,6 +25,7 @@ class _DetailKegiatanScreenState extends State<DetailKegiatanScreen> {
       if (kp.selected != null) {
         // ✅ Fetch detail lengkap termasuk realisasi_fisik per bulan
         kp.loadKegiatanDetail(kp.selected!.id);
+        
       }
     });
   }
@@ -32,7 +33,7 @@ class _DetailKegiatanScreenState extends State<DetailKegiatanScreen> {
   @override
   Widget build(BuildContext context) {
     final kegiatan = context.watch<KegiatanProvider>().selected;
-
+    print("kegiatan: $kegiatan. Detail: ${kegiatan != null ? kegiatan.realisasiBulanan : 'null'}");
     if (kegiatan == null) {
       return Scaffold(
         appBar: AppBar(title: const Text(AppStrings.detailKegiatan)),
@@ -58,7 +59,11 @@ class _DetailKegiatanScreenState extends State<DetailKegiatanScreen> {
             _InfoCard(
               title: 'Informasi Kegiatan',
               rows: [
+                _InfoRow('Sasaran Strategis', kegiatan.sasaranStrategis),
+                _InfoRow('Indikator', kegiatan.indikatorKinerja),
                 _InfoRow('Program', kegiatan.program),
+                _InfoRow('Kegiatan', kegiatan.kegiatan),
+                _InfoRow('Sub Kegiatan', kegiatan.subKegiatan),
                 _InfoRow('Target Fisik', '${kegiatan.target.toStringAsFixed(0)} ${kegiatan.satuan}'),
                 _InfoRow('Realisasi Fisik', '${kegiatan.totalRealisasiFisik.toStringAsFixed(0)} ${kegiatan.satuan}'),
                 _InfoRow('Sisa Target', '${kegiatan.sisaTarget.toStringAsFixed(0)} ${kegiatan.satuan}'),

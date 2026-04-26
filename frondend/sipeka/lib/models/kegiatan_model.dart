@@ -22,7 +22,9 @@ class KegiatanModel extends Equatable {
   final double persenAnggaran;
   final double sisaTarget; // ✅ field proper, bukan getter null
   final double sisaAnggaran;
-  final List<RealisasiBulan> realisasiBulanan; // ✅ field proper, bukan getter null
+  final List<RealisasiBulan>
+  realisasiBulanan; // ✅ field proper, bukan getter null
+  final bool canManage;
 
   const KegiatanModel({
     required this.id,
@@ -43,6 +45,7 @@ class KegiatanModel extends Equatable {
     this.sisaTarget = 0,
     this.sisaAnggaran = 0,
     this.realisasiBulanan = const [], // ✅ default list kosong
+    this.canManage = false,
   });
 
   String get nama => subKegiatan;
@@ -58,47 +61,60 @@ class KegiatanModel extends Equatable {
     return 0.0;
   }
 
+  static bool _toBool(dynamic val) {
+    if (val == null) return false;
+    if (val is bool) return val;
+    if (val is int) return val == 1;
+    if (val is String) {
+      final normalized = val.toLowerCase().trim();
+      return normalized == 'true' || normalized == '1' || normalized == 'yes';
+    }
+    return false;
+  }
+
   factory KegiatanModel.fromJson(Map<String, dynamic> json) {
     List<RealisasiBulan> bulanan = [];
     if (json['realisasi_fisik'] != null) {
-      final rawFisik    = json['realisasi_fisik'] as List<dynamic>;
+      final rawFisik = json['realisasi_fisik'] as List<dynamic>;
       final rawAnggaran = json['realisasi_anggaran'] as List<dynamic>? ?? [];
 
       bulanan = rawFisik.map((e) {
-        final map   = e as Map<String, dynamic>;
+        final map = e as Map<String, dynamic>;
         final bulan = map['bulan'] as int;
         final anggaranEntry = rawAnggaran.firstWhere(
           (a) => (a as Map<String, dynamic>)['bulan'] == bulan,
           orElse: () => {'bulan': bulan, 'nilai': 0},
         );
         return RealisasiBulan(
-          bulan:    bulan,
-          fisik:    _toDouble(map['nilai']),
+          bulan: bulan,
+          fisik: _toDouble(map['nilai']),
           anggaran: _toDouble((anggaranEntry as Map<String, dynamic>)['nilai']),
         );
-      }).toList()
-        ..sort((a, b) => a.bulan.compareTo(b.bulan));
+      }).toList()..sort((a, b) => a.bulan.compareTo(b.bulan));
     }
 
     return KegiatanModel(
-      id:                     json['id'] as int,
-      sasaranStrategis:       json['sasaran_strategis'] ?? '',
-      indikatorKinerja:       json['indikator_kinerja'] ?? '',
-      satuan:                 json['satuan'] ?? '',
-      target:                 _toDouble(json['target']),
-      tahun:                  json['tahun'] as int,
-      bidang:                 json['bidang'] ?? '',
-      program:                json['program'] ?? '',
-      kegiatan:               json['kegiatan'] ?? '',
-      subKegiatan:            json['sub_kegiatan'] ?? '',
-      paguAnggaran:           _toDouble(json['pagu_anggaran']),
-      totalRealisasiFisik:    _toDouble(json['total_realisasi_fisik']),
+      id: json['id'] as int,
+      sasaranStrategis: json['sasaran_strategis'] ?? '',
+      indikatorKinerja: json['indikator_kinerja'] ?? '',
+      satuan: json['satuan'] ?? '',
+      target: _toDouble(json['target']),
+      tahun: json['tahun'] as int,
+      bidang: json['bidang'] ?? '',
+      program: json['program'] ?? '',
+      kegiatan: json['kegiatan'] ?? '',
+      subKegiatan: json['sub_kegiatan'] ?? '',
+      paguAnggaran: _toDouble(json['pagu_anggaran']),
+      totalRealisasiFisik: _toDouble(json['total_realisasi_fisik']),
       totalRealisasiAnggaran: _toDouble(json['total_realisasi_anggaran']),
-      persenFisik:            _toDouble(json['persen_target']),    // ✅ ganti dari 'persen_fisik'
-      persenAnggaran:         _toDouble(json['persen_anggaran']),
-      sisaTarget:             _toDouble(json['sisa_target']),
-      sisaAnggaran:           _toDouble(json['sisa_anggaran']),
-      realisasiBulanan:       bulanan,
+      persenFisik: _toDouble(
+        json['persen_target'],
+      ), // ✅ ganti dari 'persen_fisik'
+      persenAnggaran: _toDouble(json['persen_anggaran']),
+      sisaTarget: _toDouble(json['sisa_target']),
+      sisaAnggaran: _toDouble(json['sisa_anggaran']),
+      realisasiBulanan: bulanan,
+      canManage: _toBool(json['can_manage']),
     );
   }
 
@@ -120,8 +136,9 @@ class RealisasiBulan {
 
   factory RealisasiBulan.fromJson(Map<String, dynamic> json) {
     return RealisasiBulan(
-      bulan:    json['bulan'] as int,
-      fisik:    (json['nilai'] ?? 0).toDouble(), // kolom 'nilai' di tabel realisasi_fisik
+      bulan: json['bulan'] as int,
+      fisik: (json['nilai'] ?? 0)
+          .toDouble(), // kolom 'nilai' di tabel realisasi_fisik
       anggaran: 0, // akan diisi dari join jika perlu
     );
   }
@@ -144,7 +161,7 @@ class DashboardSummary {
     required this.totalTarget,
     required this.totalAnggaran,
     required this.totalRealisasi,
-    required this.bidangProgress, 
+    required this.bidangProgress,
     required this.totalRealisasiFisik,
   });
 
@@ -157,20 +174,19 @@ class DashboardSummary {
   }
 
   factory DashboardSummary.fromJson(Map<String, dynamic> json) {
-    
     return DashboardSummary(
-      totalKegiatan:    json['total_kegiatan'] is int
-                          ? json['total_kegiatan'] as int
-                          : int.tryParse(json['total_kegiatan'].toString()) ?? 0,
-      rataRataFisik:    _d(json['rata_realisasi_fisik']),
+      totalKegiatan: json['total_kegiatan'] is int
+          ? json['total_kegiatan'] as int
+          : int.tryParse(json['total_kegiatan'].toString()) ?? 0,
+      rataRataFisik: _d(json['rata_realisasi_fisik']),
       rataRataAnggaran: _d(json['persen_anggaran']),
-      totalTarget:      _d(json['total_target']),
-      totalAnggaran:    _d(json['total_pagu_anggaran']),
-      totalRealisasi:   _d(json['total_realisasi_anggaran']),
-      totalRealisasiFisik:   _d(json['total_realisasi_fisik']),
-      bidangProgress:   (json['bidang_progress'] as List<dynamic>? ?? [])
-                          .map((e) => BidangProgress.fromJson(e as Map<String, dynamic>))
-                          .toList(),
+      totalTarget: _d(json['total_target']),
+      totalAnggaran: _d(json['total_pagu_anggaran']),
+      totalRealisasi: _d(json['total_realisasi_anggaran']),
+      totalRealisasiFisik: _d(json['total_realisasi_fisik']),
+      bidangProgress: (json['bidang_progress'] as List<dynamic>? ?? [])
+          .map((e) => BidangProgress.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 
@@ -178,47 +194,61 @@ class DashboardSummary {
   factory DashboardSummary.fromList(List<KegiatanModel> list) {
     if (list.isEmpty) {
       return DashboardSummary(
-        totalKegiatan: 0, rataRataFisik: 0, rataRataAnggaran: 0,
-        totalTarget: 0, totalAnggaran: 0, totalRealisasi: 0, bidangProgress: [], totalRealisasiFisik: 0,
+        totalKegiatan: 0,
+        rataRataFisik: 0,
+        rataRataAnggaran: 0,
+        totalTarget: 0,
+        totalAnggaran: 0,
+        totalRealisasi: 0,
+        bidangProgress: [],
+        totalRealisasiFisik: 0,
       );
     }
     return DashboardSummary(
-      totalKegiatan:    list.length,
-      rataRataFisik:    list.map((k) => k.progressFisik).reduce((a,b) => a+b) / list.length,
-      rataRataAnggaran: list.map((k) => k.persenAnggaran).reduce((a,b) => a+b) / list.length,
-      totalTarget:      list.map((k) => k.target).reduce((a,b) => a+b),
-      totalAnggaran:    list.map((k) => k.paguAnggaran).reduce((a,b) => a+b),
-      totalRealisasi:   list.map((k) => k.totalRealisasiAnggaran).reduce((a,b) => a+b),
-      totalRealisasiFisik: list.map((k) => k.totalRealisasiFisik).reduce((a,b) => a+b),
+      totalKegiatan: list.length,
+      rataRataFisik:
+          list.map((k) => k.progressFisik).reduce((a, b) => a + b) /
+          list.length,
+      rataRataAnggaran:
+          list.map((k) => k.persenAnggaran).reduce((a, b) => a + b) /
+          list.length,
+      totalTarget: list.map((k) => k.target).reduce((a, b) => a + b),
+      totalAnggaran: list.map((k) => k.paguAnggaran).reduce((a, b) => a + b),
+      totalRealisasi: list
+          .map((k) => k.totalRealisasiAnggaran)
+          .reduce((a, b) => a + b),
+      totalRealisasiFisik: list
+          .map((k) => k.totalRealisasiFisik)
+          .reduce((a, b) => a + b),
       bidangProgress: list
-        .fold<Map<String, List<KegiatanModel>>>({}, (map, k) {
-          map.putIfAbsent(k.bidang, () => []).add(k);
-          return map;
-        })
-        .entries
-        .map((e) {
-          final totalTarget = e.value
-              .map((k) => k.target)
-              .reduce((a, b) => a + b);
+          .fold<Map<String, List<KegiatanModel>>>({}, (map, k) {
+            map.putIfAbsent(k.bidang, () => []).add(k);
+            return map;
+          })
+          .entries
+          .map((e) {
+            final totalTarget = e.value
+                .map((k) => k.target)
+                .reduce((a, b) => a + b);
 
-          final totalRealisasiFisik = e.value
-              .map((k) => k.totalRealisasiFisik)
-              .reduce((a, b) => a + b);
+            final totalRealisasiFisik = e.value
+                .map((k) => k.totalRealisasiFisik)
+                .reduce((a, b) => a + b);
 
-          final progress = totalTarget > 0
-              ? (totalRealisasiFisik / totalTarget) * 100
-              : 0.0;
+            final progress = totalTarget > 0
+                ? (totalRealisasiFisik / totalTarget) * 100
+                : 0.0;
 
-          return BidangProgress(
-            nama: e.key,
-            progress: progress,
+            return BidangProgress(
+              nama: e.key,
+              progress: progress,
 
-            // kalau kamu sudah tambah field ini di model
-            totalTarget: totalTarget,
-            totalRealisasiFisik: totalRealisasiFisik,
-          );
-        })
-        .toList(),
+              // kalau kamu sudah tambah field ini di model
+              totalTarget: totalTarget,
+              totalRealisasiFisik: totalRealisasiFisik,
+            );
+          })
+          .toList(),
     );
   }
 }

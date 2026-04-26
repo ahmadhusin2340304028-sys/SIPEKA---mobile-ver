@@ -98,13 +98,8 @@ class KegiatanController extends Controller
             'buktiKegiatan',
         ])->findOrFail($id);
 
-        // Staff bidang hanya bisa lihat detail kegiatan bidangnya
-        if ($user->isStaffBidang() && $kegiatan->bidang !== $user->getBidang()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Akses ditolak. Kegiatan ini bukan bidang Anda.',
-            ], 403);
-        }
+        // Detail kegiatan bersifat read-only, jadi semua role yang login boleh melihat.
+        // Hak input/update tetap dikirim lewat can_manage.
 
         return response()->json([
             'success' => true,

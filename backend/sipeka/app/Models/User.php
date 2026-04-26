@@ -67,11 +67,21 @@ class User extends Authenticatable
     }
 
     /**
+     * Admin/Kadis/Sekretaris boleh melihat semua data.
+     * Kadis dan Sekretaris tetap view-only untuk endpoint write.
+     */
+    public function canViewAll(): bool
+    {
+        return $this->isAdmin() || $this->isKadis() || $this->isSekretaris();
+    }
+
+    /**
      * Apakah user adalah staff bidang (bukan admin/kadis/sekretaris).
      */
     public function isStaffBidang(): bool
     {
-        return array_key_exists($this->role, self::BIDANG_ROLE_MAP);
+        return !$this->canViewAll()
+            && array_key_exists($this->role, self::BIDANG_ROLE_MAP);
     }
 
     /**
@@ -80,6 +90,10 @@ class User extends Authenticatable
      */
     public function getBidang(): ?string
     {
+        if (!$this->isStaffBidang()) {
+            return null;
+        }
+
         return self::BIDANG_ROLE_MAP[$this->role] ?? null;
     }
 
@@ -89,6 +103,7 @@ class User extends Authenticatable
     public function canManageKegiatan(Kegiatan $kegiatan): bool
     {
         if ($this->isAdmin()) return true;
+        if ($this->canViewAll()) return false;
 
         $bidang = $this->getBidang();
         if ($bidang === null) return false; // kadis/sekretaris = view only
