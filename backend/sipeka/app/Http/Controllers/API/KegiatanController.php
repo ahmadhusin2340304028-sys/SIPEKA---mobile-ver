@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Kegiatan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+// use Illuminate\Support\Facades\DB;
 
 class KegiatanController extends Controller
 {
@@ -28,6 +28,14 @@ class KegiatanController extends Controller
         $user  = $request->user();
         $query = Kegiatan::query();
 
+        $bidangOptions = Kegiatan::query()
+            ->whereNotNull('bidang')
+            ->where('bidang', '!=', '')
+            ->distinct()
+            ->orderBy('bidang')
+            ->pluck('bidang')
+            ->values();
+
         // ── Bidang Filter (access control) ──────────────────────────────────
         // if ($user->isStaffBidang()) {
         //     // Staff hanya lihat data bidangnya sendiri
@@ -38,6 +46,10 @@ class KegiatanController extends Controller
         // }
 
         // ── Search ──────────────────────────────────────────────────────────
+        if ($request->filled('bidang')) {
+            $query->where('bidang', $request->bidang);
+        }
+
         // if ($request->filled('search')) {
         //     $q = $request->search;
         //     $query->where(function ($q2) use ($q) {
@@ -79,6 +91,9 @@ class KegiatanController extends Controller
         return response()->json([
             'success' => true,
             'data'    => $kegiatan,
+            'filters' => [
+                'bidang' => $bidangOptions,
+            ],
         ]);
     }
 

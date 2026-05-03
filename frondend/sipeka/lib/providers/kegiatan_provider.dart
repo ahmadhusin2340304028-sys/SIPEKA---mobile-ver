@@ -12,12 +12,18 @@ class KegiatanProvider extends ChangeNotifier {
   LoadState _loadState = LoadState.idle;
   List<KegiatanModel> _allKegiatan = [];
   KegiatanModel? _selected;
+  List<String> _bidangOptions = [];
   String _searchQuery = '';
   String? _selectedBidang;
   DashboardSummary? _summary;
   bool _isSubmitting = false;
+  bool _isLoadingMore = false;
   String? _submitMessage;
   String? _errorMessage;
+  int _currentPage = 0;
+  int _lastPage = 1;
+  int _perPage = 20;
+  int _totalItems = 0;
 
   // ── Getters ───────────────────────────────────────────────────────────────
 
@@ -27,14 +33,24 @@ class KegiatanProvider extends ChangeNotifier {
   KegiatanModel? get selected => _selected;
   DashboardSummary? get summary => _summary;
   bool get isSubmitting => _isSubmitting;
+  bool get isLoadingMore => _isLoadingMore;
+  bool get hasMoreKegiatan => _currentPage < _lastPage;
+  int get totalItems => _totalItems;
   String? get submitMessage => _submitMessage;
   String? get errorMessage => _errorMessage;
   String get searchQuery => _searchQuery;
   String? get selectedBidang => _selectedBidang;
 
   List<String> get allBidang {
+    if (_bidangOptions.isNotEmpty) {
+      return List<String>.from(_bidangOptions)..sort();
+    }
+
     final set = <String>{};
-    for (final k in _allKegiatan) set.add(k.bidang);
+    for (final k in _allKegiatan) {
+      if (k.bidang.trim().isNotEmpty) set.add(k.bidang.trim());
+    }
+
     return set.toList()..sort();
   }
 
@@ -84,21 +100,72 @@ class KegiatanProvider extends ChangeNotifier {
 
   Future<void> loadKegiatan() async {
     _loadState = LoadState.loading;
+    _currentPage = 0;
+    _lastPage = 1;
+    _totalItems = 0;
+    _isLoadingMore = false;
     notifyListeners();
-    await _fetchKegiatan();
+    await _fetchKegiatan(page: 1, reset: true);
   }
 
-  Future<void> _fetchKegiatan() async {
-    try {
-      final data = await DioProvider().getKegiatan();
-      print('Fetched kegiatan data: $data');
+  Future<void> loadMoreKegiatan() async {
+    if (_isLoadingMore || isLoading || !hasMoreKegiatan) return;
 
-      if (data != null) {
+    _isLoadingMore = true;
+    notifyListeners();
+
+    try {
+      await _fetchKegiatan(page: _currentPage + 1, reset: false);
+    } finally {
+      _isLoadingMore = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> refreshKegiatan() async {
+    await loadKegiatan();
+  }
+
+  Future<void> _fetchKegiatan({required int page, required bool reset}) async {
+    try {
+      final pageData = await DioProvider().getKegiatan(
+        page: page,
+        perPage: _perPage,
+        bidang: _selectedBidang,
+      );
+      print('Fetched kegiatan page $page: $pageData');
+
+      if (pageData != null) {
         // ✅ Wrap map() dalam try tersendiri agar error parsing terlihat jelas
         try {
-          _allKegiatan = data
+          final data = pageData['items'] as List<dynamic>? ?? [];
+          final bidangOptions = pageData['bidang_options'];
+          if (bidangOptions is List) {
+            _bidangOptions = bidangOptions
+                .map((e) => e?.toString().trim() ?? '')
+                .where((e) => e.isNotEmpty)
+                .toSet()
+                .toList()
+              ..sort();
+          }
+
+          final parsed = data
               .map((e) => KegiatanModel.fromJson(e as Map<String, dynamic>))
               .toList();
+
+          if (reset) {
+            _allKegiatan = parsed;
+          } else {
+            final existingIds = _allKegiatan.map((k) => k.id).toSet();
+            _allKegiatan.addAll(
+              parsed.where((k) => !existingIds.contains(k.id)),
+            );
+          }
+
+          _currentPage = _asInt(pageData['current_page'], page);
+          _lastPage = _asInt(pageData['last_page'], page);
+          _perPage = _asInt(pageData['per_page'], _perPage);
+          _totalItems = _asInt(pageData['total'], _allKegiatan.length);
           _loadState = LoadState.loaded;
           _errorMessage = null;
           _summary ??= DashboardSummary.fromList(_allKegiatan);
@@ -121,7 +188,13 @@ class KegiatanProvider extends ChangeNotifier {
     }
 
     print('Kegiatan list count: ${_allKegiatan.length}');
-    notifyListeners();
+    if (reset) notifyListeners();
+  }
+
+  int _asInt(dynamic value, int fallback) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
   }
 
   Future<void> loadKegiatanDetail(int id) async {
@@ -155,14 +228,23 @@ class KegiatanProvider extends ChangeNotifier {
   }
 
   void setBidangFilter(String? bidang) {
+    if (_selectedBidang == bidang) return;
+
     _selectedBidang = bidang;
-    notifyListeners();
+    loadKegiatan();
   }
 
   void clearFilters() {
+    final shouldReload = _selectedBidang != null;
+
     _searchQuery = '';
     _selectedBidang = null;
-    notifyListeners();
+
+    if (shouldReload) {
+      loadKegiatan();
+    } else {
+      notifyListeners();
+    }
   }
 
   // ── Submit Realisasi ──────────────────────────────────────────────────────
@@ -224,7 +306,7 @@ class KegiatanProvider extends ChangeNotifier {
         notifyListeners();
 
         // Refresh data kegiatan
-        await _fetchKegiatan();
+        await _fetchKegiatan(page: 1, reset: true);
         return true;
       }
     } catch (e) {

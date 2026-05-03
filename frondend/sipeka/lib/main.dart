@@ -17,6 +17,7 @@ import 'screens/kegiatan/kegiatan_screen.dart';
 import 'screens/kegiatan/detail_kegiatan_screen.dart';
 import 'screens/kegiatan/input_realisasi_screen.dart';
 import 'screens/undangan/undangan_screen.dart';
+import 'screens/tentang/tentang_screen.dart';
 
 
 void main() {
@@ -66,6 +67,7 @@ class SipekaApp extends StatelessWidget {
           AppRoutes.detailKegiatan: (_) => const DetailKegiatanScreen(),
           AppRoutes.inputRealisasi: (_) => const InputRealisasiScreen(),
           AppRoutes.undangan: (_) => const UndanganScreen(),
+          AppRoutes.tentang: (_) => const TentangScreen(),
         },
       ),
     );
@@ -162,10 +164,10 @@ class _SplashGateState extends State<_SplashGate>
                         width: 1.5,
                       ),
                     ),
-                    child: const Icon(
-                      Icons.bar_chart_rounded,
-                      color: Colors.white,
-                      size: 48,
+                    child: const Image(
+                      image: AssetImage('assets/images/dinsos_logo.png'),
+                      width: 48,
+                      height: 48,
                     ),
                   ),
                   const SizedBox(height: 24),

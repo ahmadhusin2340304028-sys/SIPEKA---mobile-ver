@@ -45,9 +45,6 @@ class AuthController extends Controller
             ]);
         }
 
-        // Hapus token lama agar tidak menumpuk
-        $user->tokens()->delete();
-
         $token = $user->createToken('sipeka-token')->plainTextToken;
 
         return response()->json([
@@ -71,10 +68,9 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        if ($user) {
-            // hapus SEMUA token user
-            $user->tokens()->delete();
-        }
+        // Hapus hanya token yang sedang dipakai, supaya device lain tetap login.
+        // Kalau butuh logout semua device, buat endpoint khusus untuk delete semua token.
+        $user?->currentAccessToken()?->delete();
 
         return response()->json([
             'success' => true,

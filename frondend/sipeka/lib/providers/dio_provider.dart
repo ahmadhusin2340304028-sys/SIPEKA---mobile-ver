@@ -56,6 +56,7 @@ class DioProvider {
       var response = await Dio().get(
         '$baseApiUrl/user',
         options: Options(
+          validateStatus: (status) => status != null && status < 500,
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
@@ -117,7 +118,13 @@ class DioProvider {
     }
   }
 
-  Future<List<dynamic>?> getKegiatan({String? search, String? tahun}) async {
+  Future<Map<String, dynamic>?> getKegiatan({
+    String? search,
+    String? tahun,
+    String? bidang,
+    int page = 1,
+    int perPage = 20,
+  }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
@@ -127,6 +134,9 @@ class DioProvider {
         queryParameters: {
           if (search != null && search.isNotEmpty) 'search': search,
           if (tahun != null) 'tahun': tahun,
+          if (bidang != null && bidang.isNotEmpty) 'bidang': bidang,
+          'page': page,
+          'per_page': perPage,
         },
         options: Options(
           headers: {
@@ -139,13 +149,40 @@ class DioProvider {
       print('getKegiatan status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
+        final filters = response.data['filters'];
+        final bidangOptions = filters is Map
+            ? filters['bidang'] as List<dynamic>? ?? const <dynamic>[]
+            : const <dynamic>[];
+
         final body = response.data['data'];
         if (body is Map && body['data'] != null) {
-          final list = body['data'] as List<dynamic>;
+          final list = body['data'] as List<dynamic>? ?? [];
           print('getKegiatan items: ${list.length}');
-          return list;
+          int toInt(dynamic value, int fallback) {
+            if (value is int) return value;
+            if (value is String) return int.tryParse(value) ?? fallback;
+            return fallback;
+          }
+
+          return {
+            'items': list,
+            'current_page': toInt(body['current_page'], page),
+            'last_page': toInt(body['last_page'], page),
+            'per_page': toInt(body['per_page'], perPage),
+            'total': toInt(body['total'], list.length),
+            'bidang_options': bidangOptions,
+          };
         }
-        if (body is List) return body;
+        if (body is List) {
+          return {
+            'items': body,
+            'current_page': 1,
+            'last_page': 1,
+            'per_page': body.length,
+            'total': body.length,
+            'bidang_options': bidangOptions,
+          };
+        }
       }
       return null;
     } catch (e, st) {

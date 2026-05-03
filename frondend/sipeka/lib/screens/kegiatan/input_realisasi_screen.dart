@@ -9,6 +9,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_utils.dart';
 import '../../models/realisasi_model.dart';
+import '../../providers/dio_provider.dart';
 import '../../providers/kegiatan_provider.dart';
 import '../../providers/realisasi_provider.dart';
 
@@ -81,7 +82,7 @@ class _InputRealisasiScreenState extends State<InputRealisasiScreen> {
   Future<void> _pickBuktiFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'jpeg'],
       allowMultiple: false,
       withData: true,
     );
@@ -194,7 +195,7 @@ class _InputRealisasiScreenState extends State<InputRealisasiScreen> {
                 const SizedBox(height: 16),
 
                 // ── Step 1: Pilih bulan ───────────────────────────────────
-                _StepLabel(
+                const _StepLabel(
                   step: '1',
                   label: 'Pilih Bulan Realisasi',
                   isActive: true,
@@ -399,12 +400,7 @@ class _KegiatanBanner extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.primaryLight,
         borderRadius: BorderRadius.circular(12),
-        border: const Border(
-          left: BorderSide(color: AppColors.primary, width: 3.5),
-          top: BorderSide(color: Color(0xFFBFDBFE), width: 0.5),
-          right: BorderSide(color: Color(0xFFBFDBFE), width: 0.5),
-          bottom: BorderSide(color: Color(0xFFBFDBFE), width: 0.5),
-        ),
+        border: Border.all(color: const Color(0xFFBFDBFE), width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -905,8 +901,29 @@ class _BuktiCard extends StatelessWidget {
   final BuktiDetail bukti;
   const _BuktiCard({required this.bukti});
 
-  Future<void> _openFile(BuildContext context) async {
+  String? _fileUrlForDevice() {
     final url = bukti.fileUrl;
+    if (url == null || url.isEmpty) return null;
+
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasAuthority) return url;
+
+    if (uri.host == '127.0.0.1' || uri.host == 'localhost') {
+      final apiUri = Uri.parse(DioProvider.baseApiUrl);
+      return uri
+          .replace(
+            scheme: apiUri.scheme,
+            host: apiUri.host,
+            port: apiUri.hasPort ? apiUri.port : null,
+          )
+          .toString();
+    }
+
+    return url;
+  }
+
+  Future<void> _openFile(BuildContext context) async {
+    final url = _fileUrlForDevice();
     if (url == null || url.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -917,9 +934,18 @@ class _BuktiCard extends StatelessWidget {
     final uri = Uri.tryParse(url);
     if (uri == null) return;
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    try {
+      var opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!opened) {
+        opened = await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+
+      if (!opened && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Tidak dapat membuka file: $url')),
+        );
+      }
+    } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Tidak dapat membuka file: $url')),
@@ -930,6 +956,8 @@ class _BuktiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fileUrl = _fileUrlForDevice();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -946,9 +974,6 @@ class _BuktiCard extends StatelessWidget {
             decoration: const BoxDecoration(
               color: AppColors.surfaceGray,
               borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-              border: Border(
-                bottom: BorderSide(color: AppColors.border, width: 0.5),
-              ),
             ),
             child: const Row(
               children: [
@@ -1039,7 +1064,7 @@ class _BuktiCard extends StatelessWidget {
           ),
 
           // Direct URL jika ada
-          if (bukti.fileUrl != null) ...[
+          if (fileUrl != null) ...[
             const Divider(height: 0),
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
@@ -1053,7 +1078,7 @@ class _BuktiCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      bukti.fileUrl!,
+                      fileUrl,
                       style: const TextStyle(
                         fontSize: 10,
                         color: AppColors.primaryMid,
@@ -1064,7 +1089,7 @@ class _BuktiCard extends StatelessWidget {
                   ),
                   GestureDetector(
                     onTap: () {
-                      Clipboard.setData(ClipboardData(text: bukti.fileUrl!));
+                      Clipboard.setData(ClipboardData(text: fileUrl));
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('URL disalin ke clipboard'),

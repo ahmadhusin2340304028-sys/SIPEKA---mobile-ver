@@ -86,6 +86,48 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 20),
                 const _HelpText(),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "SIPEKA v1.0.0",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Tentang SIPEKA"),
+                              content: const Text(
+                                "SIPEKA adalah Sistem Informasi Pelaporan "
+                                "Kinerja dan Anggaran Kegiatan.\n\n"
+                                "Dikembangkan untuk mendukung "
+                                "efisiensi pelaporan.",
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text("Tutup"),
+                                )
+                              ],
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          "Tentang Aplikasi",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -103,21 +145,26 @@ class _Logo extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 80,
-          height: 80,
+          width: 100,
+          height: 100,
           decoration: BoxDecoration(
             color: AppColors.primary,
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(50),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.25),
+                // ignore: deprecated_member_use
+                color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.30),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: const Icon(Icons.bar_chart_rounded,
-              color: Colors.white, size: 42),
+          child: const Padding(
+            padding: EdgeInsets.all(10), // makin besar = gambar makin kecil
+            child: Image(
+              image: AssetImage('assets/images/dinsos_logo.png'),
+            ),
+          ),
         ),
         const SizedBox(height: 18),
         const Text(

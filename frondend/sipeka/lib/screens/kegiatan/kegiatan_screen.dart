@@ -17,18 +17,31 @@ class KegiatanScreen extends StatefulWidget {
 
 class _KegiatanScreenState extends State<KegiatanScreen> {
   final _searchCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    _scrollCtrl.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // ✅ Hapus guard !kp.isLoaded — selalu load ulang saat screen dibuka
       context.read<KegiatanProvider>().loadKegiatan();
     });
   }
 
+  void _onScroll() {
+    if (!_scrollCtrl.hasClients) return;
+
+    final position = _scrollCtrl.position;
+    if (position.pixels >= position.maxScrollExtent - 240) {
+      context.read<KegiatanProvider>().loadMoreKegiatan();
+    }
+  }
+
   @override
   void dispose() {
+    _scrollCtrl.removeListener(_onScroll);
+    _scrollCtrl.dispose();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -49,8 +62,7 @@ class _KegiatanScreenState extends State<KegiatanScreen> {
             bidangOptions: ['Semua', ...kp.allBidang],
             selectedBidang: kp.selectedBidang,
             onSearch: (q) => kp.setSearch(q),
-            onBidangSelect: (b) =>
-                kp.setBidangFilter(b == 'Semua' ? null : b),
+            onBidangSelect: (b) => kp.setBidangFilter(b == 'Semua' ? null : b),
             onClear: () {
               _searchCtrl.clear();
               kp.clearFilters();
@@ -63,57 +75,77 @@ class _KegiatanScreenState extends State<KegiatanScreen> {
             child: kp.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : kp.loadState == LoadState.error
-                    // ✅ Tampilkan error state agar user tahu masalahnya
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.wifi_off_rounded,
-                                size: 48, color: AppColors.textHint),
-                            const SizedBox(height: 12),
-                            Text(
-                              kp.errorMessage ?? 'Gagal memuat data',
-                              style: const TextStyle(color: AppColors.textMuted),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: kp.loadKegiatan,
-                              icon: const Icon(Icons.refresh_rounded),
-                              label: const Text('Coba Lagi'),
-                            ),
-                          ],
+                // ✅ Tampilkan error state agar user tahu masalahnya
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.wifi_off_rounded,
+                          size: 48,
+                          color: AppColors.textHint,
                         ),
-                      )
-                    : list.isEmpty
-                        ? _EmptyState(
-                            hasFilter: kp.searchQuery.isNotEmpty ||
-                                kp.selectedBidang != null,
-                            onClear: () {
-                              _searchCtrl.clear();
-                              kp.clearFilters();
-                            },
-                          )
-                        : RefreshIndicator(
-                            onRefresh: kp.loadKegiatan,
-                            child: ListView.separated(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: list.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 10),
-                              itemBuilder: (ctx, i) {
-                                final k = list[i];
-                                return KegiatanCard(
-                                  kegiatan: k,
-                                  onTap: () {
-                                    kp.selectKegiatan(k);
-                                    Navigator.pushNamed(
-                                        context, AppRoutes.detailKegiatan);
-                                  },
-                                );
-                              },
+                        const SizedBox(height: 12),
+                        Text(
+                          kp.errorMessage ?? 'Gagal memuat data',
+                          style: const TextStyle(color: AppColors.textMuted),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: kp.loadKegiatan,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Coba Lagi'),
+                        ),
+                      ],
+                    ),
+                  )
+                : list.isEmpty
+                ? _EmptyState(
+                    hasFilter:
+                        kp.searchQuery.isNotEmpty || kp.selectedBidang != null,
+                    onClear: () {
+                      _searchCtrl.clear();
+                      kp.clearFilters();
+                    },
+                  )
+                : RefreshIndicator(
+                    onRefresh: kp.refreshKegiatan,
+                    child: ListView.separated(
+                      controller: _scrollCtrl,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: list.length + (kp.isLoadingMore ? 1 : 0),
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (ctx, i) {
+                        if (i >= list.length) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
                             ),
-                          ),
+                          );
+                        }
+
+                        final k = list[i];
+                        return KegiatanCard(
+                          kegiatan: k,
+                          onTap: () {
+                            kp.selectKegiatan(k);
+                            Navigator.pushNamed(
+                              context,
+                              AppRoutes.detailKegiatan,
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
@@ -154,17 +186,25 @@ class _SearchFilterBar extends StatelessWidget {
             onChanged: onSearch,
             decoration: InputDecoration(
               hintText: 'Cari kegiatan, bidang, pelaksana...',
-              prefixIcon: const Icon(Icons.search_rounded,
-                  size: 20, color: AppColors.textMuted),
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+                size: 20,
+                color: AppColors.textMuted,
+              ),
               suffixIcon: controller.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear_rounded,
-                          size: 18, color: AppColors.textMuted),
+                      icon: const Icon(
+                        Icons.clear_rounded,
+                        size: 18,
+                        color: AppColors.textMuted,
+                      ),
                       onPressed: onClear,
                     )
                   : null,
               contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 10),
+                horizontal: 14,
+                vertical: 10,
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -214,8 +254,7 @@ class _FilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color:
-              isSelected ? AppColors.primary : AppColors.surfaceGray,
+          color: isSelected ? AppColors.primary : AppColors.surfaceGray,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
@@ -227,8 +266,7 @@ class _FilterChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color:
-                isSelected ? Colors.white : AppColors.textSecondary,
+            color: isSelected ? Colors.white : AppColors.textSecondary,
           ),
         ),
       ),
@@ -251,9 +289,7 @@ class _EmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            hasFilter
-                ? Icons.search_off_rounded
-                : Icons.folder_open_rounded,
+            hasFilter ? Icons.search_off_rounded : Icons.folder_open_rounded,
             size: 56,
             color: AppColors.textHint,
           ),
@@ -262,15 +298,11 @@ class _EmptyState extends StatelessWidget {
             hasFilter
                 ? 'Tidak ada kegiatan yang cocok'
                 : 'Belum ada data kegiatan',
-            style: const TextStyle(
-                fontSize: 14, color: AppColors.textMuted),
+            style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
           ),
           if (hasFilter) ...[
             const SizedBox(height: 12),
-            TextButton(
-              onPressed: onClear,
-              child: const Text('Hapus filter'),
-            ),
+            TextButton(onPressed: onClear, child: const Text('Hapus filter')),
           ],
         ],
       ),

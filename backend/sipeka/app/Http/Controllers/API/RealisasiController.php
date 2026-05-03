@@ -33,19 +33,30 @@ class RealisasiController extends Controller
         $fisik     = RealisasiFisik::where('kegiatan_id', $id)->orderBy('bulan')->get();
         $anggaran  = RealisasiAnggaran::where('kegiatan_id', $id)->orderBy('bulan')->get();
         $keterangan = KeteranganKegiatan::where('kegiatan_id', $id)->orderBy('bulan')->get();
-        $bukti     = BuktiKegiatan::where('kegiatan_id', $id)->orderBy('bulan')->get()
-            ->map(fn($b) => array_merge($b->toArray(), ['file_url' => $b->file_url]));
+        $bukti     = BuktiKegiatan::where('kegiatan_id', $id)
+            ->orderBy('bulan')
+            ->get()
+            ->keyBy('bulan');
 
         // Gabungkan per bulan untuk kemudahan frontend
         $bulanData = [];
         for ($b = 1; $b <= 12; $b++) {
+            $bulanBukti = $bukti->get($b);
+
             $bulanData[$b] = [
                 'bulan'          => $b,
                 'nama_bulan'     => $this->namaBulan($b),
                 'fisik'          => optional($fisik->firstWhere('bulan', $b))->nilai,
                 'anggaran'       => optional($anggaran->firstWhere('bulan', $b))->nilai,
                 'keterangan'     => optional($keterangan->firstWhere('bulan', $b))->keterangan,
-                'bukti'          => optional($bukti->firstWhere('bulan', $b)),
+                'bukti'          => $bulanBukti ? [
+                    'id'          => $bulanBukti->id,
+                    'kegiatan_id' => $bulanBukti->kegiatan_id,
+                    'bulan'       => $bulanBukti->bulan,
+                    'file_path'   => $bulanBukti->file_path,
+                    'file_name'   => basename($bulanBukti->file_path),
+                    'file_url'    => $bulanBukti->file_url,
+                ] : null,
             ];
         }
 
@@ -157,13 +168,17 @@ class RealisasiController extends Controller
             ], 403);
         }
 
-        // Hapus file lama jika ada
-        $existing = BuktiKegiatan::where('kegiatan_id', $validated['kegiatan_id'])
+        // Satu kegiatan + satu bulan hanya boleh punya satu bukti.
+        // Hapus semua record/file lama bulan ini sebelum menyimpan pengganti.
+        $existingFiles = BuktiKegiatan::where('kegiatan_id', $validated['kegiatan_id'])
             ->where('bulan', $validated['bulan'])
-            ->first();
+            ->get();
 
-        if ($existing && Storage::disk('public')->exists($existing->file_path)) {
-            Storage::disk('public')->delete($existing->file_path);
+        foreach ($existingFiles as $existing) {
+            if (Storage::disk('public')->exists($existing->file_path)) {
+                Storage::disk('public')->delete($existing->file_path);
+            }
+            $existing->delete();
         }
 
         // Simpan file baru
@@ -172,18 +187,23 @@ class RealisasiController extends Controller
             'public'
         );
 
-        BuktiKegiatan::updateOrCreate(
-            [
-                'kegiatan_id' => $validated['kegiatan_id'],
-                'bulan'       => $validated['bulan'],
-            ],
-            ['file_path' => $path]
-        );
+        $bukti = BuktiKegiatan::create([
+            'kegiatan_id' => $validated['kegiatan_id'],
+            'bulan'       => $validated['bulan'],
+            'file_path'   => $path,
+        ]);
 
         return response()->json([
             'success'  => true,
             'message'  => 'Bukti berhasil diunggah.',
-            'file_url' => asset('storage/' . $path),
+            'data'     => [
+                'id'          => $bukti->id,
+                'kegiatan_id' => $bukti->kegiatan_id,
+                'bulan'       => $bukti->bulan,
+                'file_path'   => $bukti->file_path,
+                'file_name'   => basename($bukti->file_path),
+                'file_url'    => $bukti->file_url,
+            ],
         ], 201);
     }
 

@@ -61,6 +61,13 @@ class CustomDrawer extends StatelessWidget {
 
             // ── Logout ────────────────────────────────────────────────────────
             const Divider(),
+            _DrawerItem(
+                icon: Icons.info_outline_rounded,
+                label: AppStrings.tentang,
+                route: AppRoutes.tentang,
+                currentRoute: route,
+                
+              ),  
             _LogoutButton(onLogout: () => _doLogout(context, auth)),
             const SizedBox(height: 8),
           ],
@@ -163,11 +170,12 @@ class _DrawerHeader extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: const Color.fromARGB(255, 255, 255, 255),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.bar_chart_rounded,
-                    color: Colors.white, size: 22),
+                child: const Image(image: AssetImage('assets/images/dinsos_logo.png'), 
+                width: 22, 
+                height: 22)
               ),
               const SizedBox(width: 10),
               const Column(

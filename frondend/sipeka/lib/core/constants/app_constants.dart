@@ -8,6 +8,7 @@ class AppRoutes {
   static const String detailKegiatan = '/kegiatan/detail';
   static const String inputRealisasi = '/kegiatan/input-realisasi';
   static const String undangan = '/undangan';
+  static const String tentang = '/tentang';
 }
 
 class AppStrings {
@@ -18,6 +19,7 @@ class AppStrings {
   static const String dashboard = 'Dashboard';
   static const String kegiatan = 'Kegiatan';
   static const String undangan = 'Undangan';
+  static const String tentang = 'Tentang Aplikasi';
   static const String logout = 'Keluar';
   static const String inputRealisasi = 'Input Realisasi';
   static const String detailKegiatan = 'Detail Kegiatan';

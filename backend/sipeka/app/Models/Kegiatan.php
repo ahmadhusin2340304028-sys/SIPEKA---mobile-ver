@@ -89,7 +89,7 @@ class Kegiatan extends Model
     }
 
     /**
-     * Sisa anggaran.
+     * Sisatarget.
      */
     public function getSisaTargetAttribute(): float
     {
