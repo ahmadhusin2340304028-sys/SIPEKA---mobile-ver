@@ -1,8 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:sipeka/widgets/custom_drawer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TentangScreen extends StatelessWidget {
   const TentangScreen({super.key});
+
+  Widget buildIconItem(IconData icon, String label, String url, Color color) {
+    return Expanded(
+      child: InkWell(
+        onTap: () async {
+          final uri = Uri.parse(url);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri);
+          }
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 40, color: color),
+            SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,17 +37,33 @@ class TentangScreen extends StatelessWidget {
         title: const Text("Tentang Aplikasi"),
       ),
       drawer: const CustomDrawer(),
-      body: const SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+      body: SingleChildScrollView(
+        
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // LOGO & HEADER
-            Center(
-              child: Column(
-                children:  [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 30),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.blue.shade700,
+                    Colors.blue.shade400,
+                  ],
+                ),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(24),
+                  top: Radius.circular(24)
+                ),
+              ),
+              child: const Column(
+                children: [
+                  SizedBox(height: 20),
                   CircleAvatar(
-                    radius: 45,
+                    radius: 42,
                     backgroundImage:
                         AssetImage("assets/images/dinsos_logo.png"),
                   ),
@@ -31,25 +73,25 @@ class TentangScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                   Text(
                     "Versi 1.0.0",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: Colors.white70),
                   ),
                 ],
               ),
             ),
-
-             SizedBox(height: 24),
+             const SizedBox(height: 24),
 
             // DESKRIPSI
-             Text(
+             const Text(
               "Deskripsi",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-             SizedBox(height: 8),
-             Text(
+             const SizedBox(height: 8),
+             const Text(
               "SIPEKA (Sistem Informasi Pelaporan Kinerja dan Anggaran) "
               "merupakan aplikasi yang dirancang untuk membantu proses "
               "monitoring, pencatatan, serta pelaporan kegiatan secara "
@@ -57,16 +99,16 @@ class TentangScreen extends StatelessWidget {
               textAlign: TextAlign.justify,
             ),
 
-             SizedBox(height: 20),
+             const SizedBox(height: 20),
 
             // PENGEMBANG
-             Text(
+             const Text(
               "Pengembang",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-             SizedBox(height: 8),
+             const SizedBox(height: 8),
 
-            Card(
+            const Card(
               elevation: 2,
               child: Column(
                 children:  [
@@ -125,25 +167,30 @@ class TentangScreen extends StatelessWidget {
               ),
             ),
 
-             SizedBox(height: 20),
+             const SizedBox(height: 20),
 
             // KONTAK
-             Text(
+             const Text(
               "Kontak",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
-             SizedBox(height: 8),
-             Row(
+             const SizedBox(height: 12),
+             
+
+            // Facebook
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Icon(Icons.email, size: 18),
-                SizedBox(width: 8),
-                Text("it@domain.go.id"),
+                buildIconItem(Icons.email, "Email", "mailto:it@domain.go.id", Colors.red),
+                buildIconItem(Icons.facebook, "Facebook", "https://www.facebook.com/DinsosPM", Colors.blue),
+                buildIconItem(Icons.camera_alt, "Instagram", "https://www.instagram.com/dinsospm", Colors.purple),
+                buildIconItem(Icons.language, "Website", "https://dinsos.tarakankota.go.id/", Colors.green),
               ],
             ),
 
-             SizedBox(height: 30),
+             const SizedBox(height: 30),
 
-             Center(
+             const Center(
               child: Text(
                 "© 2026 SIPEKA Team",
                 style: TextStyle(color: Colors.grey),

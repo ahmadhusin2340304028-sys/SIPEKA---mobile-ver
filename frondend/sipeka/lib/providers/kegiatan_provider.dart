@@ -1,5 +1,7 @@
 // lib/providers/kegiatan_provider.dart
 
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../models/kegiatan_model.dart';
@@ -24,6 +26,7 @@ class KegiatanProvider extends ChangeNotifier {
   int _lastPage = 1;
   int _perPage = 20;
   int _totalItems = 0;
+  Timer? _searchDebounce;
 
   // ── Getters ───────────────────────────────────────────────────────────────
 
@@ -56,20 +59,10 @@ class KegiatanProvider extends ChangeNotifier {
 
   List<KegiatanModel> get filteredKegiatan {
     var list = List<KegiatanModel>.from(_allKegiatan);
+    // Filter bidang tetap lokal (instant, tidak butuh API call baru)
+    // Search sudah ditangani server-side via setSearch() → loadKegiatan()
     if (_selectedBidang != null) {
       list = list.where((k) => k.bidang == _selectedBidang).toList();
-    }
-    if (_searchQuery.isNotEmpty) {
-      final q = _searchQuery.toLowerCase();
-      list = list
-          .where(
-            (k) =>
-                k.nama.toLowerCase().contains(q) ||
-                k.bidang.toLowerCase().contains(q) ||
-                k.program.toLowerCase().contains(q) ||
-                k.kegiatan.toLowerCase().contains(q),
-          )
-          .toList();
     }
     return list;
   }
@@ -132,6 +125,7 @@ class KegiatanProvider extends ChangeNotifier {
         page: page,
         perPage: _perPage,
         bidang: _selectedBidang,
+        search: _searchQuery.trim().isEmpty ? null : _searchQuery.trim(),
       );
       print('Fetched kegiatan page $page: $pageData');
 
@@ -224,7 +218,13 @@ class KegiatanProvider extends ChangeNotifier {
 
   void setSearch(String query) {
     _searchQuery = query;
-    notifyListeners();
+    notifyListeners(); // update UI field langsung
+
+    // Debounce 500ms — baru hit API setelah user berhenti mengetik
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+      loadKegiatan();
+    });
   }
 
   void setBidangFilter(String? bidang) {
@@ -235,7 +235,8 @@ class KegiatanProvider extends ChangeNotifier {
   }
 
   void clearFilters() {
-    final shouldReload = _selectedBidang != null;
+    _searchDebounce?.cancel();
+    final shouldReload = _selectedBidang != null || _searchQuery.isNotEmpty;
 
     _searchQuery = '';
     _selectedBidang = null;

@@ -30,6 +30,15 @@ class _DetailKegiatanScreenState extends State<DetailKegiatanScreen> {
     });
   }
 
+  void _showTriwulanDialog(BuildContext context, KegiatanModel kegiatan) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _TriwulanSheet(kegiatan: kegiatan),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final kegiatan = context.watch<KegiatanProvider>().selected;
@@ -87,12 +96,12 @@ class _DetailKegiatanScreenState extends State<DetailKegiatanScreen> {
                   const SizedBox(height: 6),
                   AppProgressBar(
                     label: 'Realisasi Fisik',
-                    target: kegiatan.target,
+                    target: 100,
                     value: kegiatan.progressFisik,
                   ),
                   AppProgressBar(
                     label: 'Realisasi Anggaran',
-                    target: kegiatan.target,
+                    target: 100,
                     value: kegiatan.progressAnggaran,
                     color: AppColors.primaryMid,
                   ),
@@ -120,6 +129,16 @@ class _DetailKegiatanScreenState extends State<DetailKegiatanScreen> {
             ],
 
             // ── CTA ───────────────────────────────────────────────────────────
+            OutlinedButton.icon(
+              onPressed: () => _showTriwulanDialog(context, kegiatan),
+              icon: const Icon(Icons.bar_chart_rounded, size: 18),
+              label: const Text('Lihat Detail Triwulan',
+                  style: TextStyle(fontSize: 14)),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
+              ),
+            ),
+            const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -407,7 +426,501 @@ class _MonthlyBarChartState extends State<_MonthlyBarChart>
   }
 }
 
-// ─── Status Pill ──────────────────────────────────────────────────────────────
+// ─── Triwulan Sheet ───────────────────────────────────────────────────────────
+
+class _TriwulanSheet extends StatelessWidget {
+  final KegiatanModel kegiatan;
+  const _TriwulanSheet({required this.kegiatan});
+
+  // Hitung akumulasi per triwulan dari realisasiBulanan
+  // Fisik: nilai bulan terakhir yang ada di triwulan (kumulatif terakhir)
+  // Anggaran: sum semua bulan di triwulan
+  List<_TriwulanData> _buildTriwulan() {
+    final bulanan = kegiatan.realisasiBulanan;
+
+    return List.generate(4, (i) {
+      final startBulan = i * 3 + 1; // 1, 4, 7, 10
+      final endBulan = startBulan + 2; // 3, 6, 9, 12
+
+      final bulanDiTriwulan = bulanan
+          .where((b) => b.bulan >= startBulan && b.bulan <= endBulan)
+          .toList()
+        ..sort((a, b) => a.bulan.compareTo(b.bulan));
+
+      // Fisik: ambil nilai bulan terakhir yang ada data (kumulatif)
+      final fisikBulanAda = bulanDiTriwulan.where((b) => b.fisik > 0).toList();
+      final fisikAkumulatif = fisikBulanAda.isNotEmpty
+          ? fisikBulanAda.last.fisik
+          : 0.0;
+
+      // Anggaran: sum semua bulan di triwulan ini
+      final anggaranSum =
+          bulanDiTriwulan.fold<double>(0, (sum, b) => sum + b.anggaran);
+
+      // Data per bulan untuk tampilan detail
+      final perBulan = List.generate(3, (j) {
+        final bulanIdx = startBulan + j;
+        final data = bulanDiTriwulan.where((b) => b.bulan == bulanIdx).toList();
+        return _BulanItem(
+          bulan: bulanIdx,
+          fisik: data.isNotEmpty ? data.first.fisik : null,
+          anggaran: data.isNotEmpty ? data.first.anggaran : null,
+        );
+      });
+
+      return _TriwulanData(
+        nomor: i + 1,
+        fisikAkumulatif: fisikAkumulatif,
+        anggaranSum: anggaranSum,
+        perBulan: perBulan,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final triwulanList = _buildTriwulan();
+    final screenH = MediaQuery.of(context).size.height;
+
+    return Container(
+      height: screenH * 0.88,
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // ── Handle + Header ───────────────────────────────────────────────
+          Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.bar_chart_rounded,
+                          color: AppColors.primary, size: 20),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Detail Realisasi per Triwulan',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close_rounded,
+                            size: 20, color: AppColors.textMuted),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
+                  ),
+                ),
+                // Sub info kegiatan
+                Padding(
+                  padding:
+                      const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                  child: Text(
+                    '${kegiatan.bidang}  ·  Target: ${kegiatan.target.toStringAsFixed(0)} ${kegiatan.satuan}  ·  Pagu: ${AppUtils.formatCurrencyCompact(kegiatan.paguAnggaran)}',
+                    style: const TextStyle(
+                        fontSize: 11, color: AppColors.textMuted),
+                  ),
+                ),
+                const Divider(height: 0),
+              ],
+            ),
+          ),
+
+          // ── List Triwulan ─────────────────────────────────────────────────
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: triwulanList.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (ctx, i) =>
+                  _TriwulanCard(data: triwulanList[i], kegiatan: kegiatan),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Data Model Triwulan ──────────────────────────────────────────────────────
+
+class _BulanItem {
+  final int bulan;
+  final double? fisik;
+  final double? anggaran;
+  _BulanItem({required this.bulan, this.fisik, this.anggaran});
+}
+
+class _TriwulanData {
+  final int nomor;
+  final double fisikAkumulatif;
+  final double anggaranSum;
+  final List<_BulanItem> perBulan;
+
+  _TriwulanData({
+    required this.nomor,
+    required this.fisikAkumulatif,
+    required this.anggaranSum,
+    required this.perBulan,
+  });
+}
+
+// ─── Triwulan Card ────────────────────────────────────────────────────────────
+
+class _TriwulanCard extends StatefulWidget {
+  final _TriwulanData data;
+  final KegiatanModel kegiatan;
+  const _TriwulanCard({required this.data, required this.kegiatan});
+
+  @override
+  State<_TriwulanCard> createState() => _TriwulanCardState();
+}
+
+class _TriwulanCardState extends State<_TriwulanCard> {
+  bool _expanded = false;
+
+  static const _namaBulan = [
+    '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+  ];
+
+  bool get _hasData =>
+      widget.data.fisikAkumulatif > 0 || widget.data.anggaranSum > 0;
+
+  Color get _statusColor {
+    if (!_hasData) return AppColors.textHint;
+    if (widget.data.fisikAkumulatif >= 80) return AppColors.success;
+    if (widget.data.fisikAkumulatif >= 50) return AppColors.primary;
+    return AppColors.warning;
+  }
+
+  String get _statusLabel {
+    if (!_hasData) return 'Belum Ada Data';
+    if (widget.data.fisikAkumulatif >= 80) return 'On Track';
+    if (widget.data.fisikAkumulatif >= 50) return 'Perlu Perhatian';
+    return 'At Risk';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final d = widget.data;
+    final paguAnggaran = widget.kegiatan.paguAnggaran;
+    final persenAnggaran = paguAnggaran > 0
+        ? (d.anggaranSum / paguAnggaran * 100).clamp(0.0, 100.0)
+        : 0.0;
+    final persenFisik =
+        d.fisikAkumulatif.clamp(0.0, 100.0);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(
+          color: _hasData ? _statusColor.withOpacity(0.3) : AppColors.border,
+          width: _hasData ? 1 : 0.5,
+        ),
+      ),
+      child: Column(
+        children: [
+          // ── Header Triwulan ─────────────────────────────────────────────
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(13)),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      // Nomor triwulan
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: _hasData
+                              ? _statusColor.withOpacity(0.12)
+                              : AppColors.surfaceGray,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Q${d.nomor}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: _hasData ? _statusColor : AppColors.textHint,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Triwulan ${d.nomor}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            Text(
+                              _bulanRange(d.nomor),
+                              style: const TextStyle(
+                                  fontSize: 11, color: AppColors.textMuted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Status badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: _hasData
+                              ? _statusColor.withOpacity(0.1)
+                              : AppColors.surfaceGray,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          _statusLabel,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: _hasData ? _statusColor : AppColors.textHint,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        _expanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        size: 18,
+                        color: AppColors.textMuted,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Progress bars ringkasan
+                  _MiniProgressRow(
+                    label: 'Fisik',
+                    value: persenFisik,
+                    color: _statusColor,
+                    suffix: '${persenFisik.toStringAsFixed(1)}%',
+                  ),
+                  const SizedBox(height: 5),
+                  _MiniProgressRow(
+                    label: 'Anggaran',
+                    value: persenAnggaran,
+                    color: AppColors.primaryMid,
+                    suffix: AppUtils.formatCurrencyCompact(d.anggaranSum),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Detail per Bulan (collapsible) ─────────────────────────────
+          if (_expanded) ...[
+            const Divider(height: 0),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+              child: Column(
+                children: d.perBulan.map((b) {
+                  final hasB = (b.fisik != null && b.fisik! > 0) ||
+                      (b.anggaran != null && b.anggaran! > 0);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(11),
+                    decoration: BoxDecoration(
+                      color: hasB
+                          ? AppColors.primaryLight
+                          : AppColors.surfaceGray,
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(
+                        color: hasB
+                            ? const Color(0xFFBFDBFE)
+                            : AppColors.border,
+                        width: 0.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        // Bulan label
+                        SizedBox(
+                          width: 78,
+                          child: Text(
+                            b.bulan >= 1 && b.bulan <= 12
+                                ? _namaBulan[b.bulan]
+                                : '-',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: hasB
+                                  ? AppColors.primaryDark
+                                  : AppColors.textMuted,
+                            ),
+                          ),
+                        ),
+                        // Fisik
+                        Expanded(
+                          child: _BulanStat(
+                            label: 'Fisik',
+                            value: b.fisik != null
+                                ? '${b.fisik!.toStringAsFixed(1)}%'
+                                : '-',
+                            hasData: b.fisik != null && b.fisik! > 0,
+                          ),
+                        ),
+                        // Anggaran
+                        Expanded(
+                          child: _BulanStat(
+                            label: 'Anggaran',
+                            value: b.anggaran != null && b.anggaran! > 0
+                                ? AppUtils.formatCurrencyCompact(b.anggaran!)
+                                : '-',
+                            hasData: b.anggaran != null && b.anggaran! > 0,
+                            alignRight: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _bulanRange(int nomor) {
+    const ranges = ['Jan – Mar', 'Apr – Jun', 'Jul – Sep', 'Okt – Des'];
+    return ranges[(nomor - 1).clamp(0, 3)];
+  }
+}
+
+// ─── Mini Progress Row ────────────────────────────────────────────────────────
+
+class _MiniProgressRow extends StatelessWidget {
+  final String label;
+  final double value; // 0–100
+  final Color color;
+  final String suffix;
+
+  const _MiniProgressRow({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.suffix,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 54,
+          child: Text(label,
+              style: const TextStyle(
+                  fontSize: 10, color: AppColors.textMuted)),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: (value / 100).clamp(0.0, 1.0),
+              minHeight: 5,
+              backgroundColor: AppColors.border,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 68,
+          child: Text(
+            suffix,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Bulan Stat Cell ──────────────────────────────────────────────────────────
+
+class _BulanStat extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool hasData;
+  final bool alignRight;
+
+  const _BulanStat({
+    required this.label,
+    required this.value,
+    this.hasData = false,
+    this.alignRight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment:
+          alignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 9, color: AppColors.textHint),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: hasData ? AppColors.textPrimary : AppColors.textHint,
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _StatusPill extends StatelessWidget {
   final String status;

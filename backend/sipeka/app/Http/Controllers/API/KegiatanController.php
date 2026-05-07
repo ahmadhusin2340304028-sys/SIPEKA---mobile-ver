@@ -45,21 +45,22 @@ class KegiatanController extends Controller
         //     $query->where('bidang', $request->bidang);
         // }
 
-        // ── Search ──────────────────────────────────────────────────────────
+        // ── Bidang Filter ────────────────────────────────────────────────────
         if ($request->filled('bidang')) {
             $query->where('bidang', $request->bidang);
         }
 
-        // if ($request->filled('search')) {
-        //     $q = $request->search;
-        //     $query->where(function ($q2) use ($q) {
-        //         $q2->where('kegiatan', 'like', "%{$q}%")
-        //            ->orWhere('sub_kegiatan', 'like', "%{$q}%")
-        //            ->orWhere('program', 'like', "%{$q}%")
-        //            ->orWhere('sasaran_strategis', 'like', "%{$q}%")
-        //            ->orWhere('indikator_kinerja', 'like', "%{$q}%");
-        //     });
-        // }
+        // ── Search ──────────────────────────────────────────────────────────
+        if ($request->filled('search')) {
+            $q = $request->search;
+            $query->where(function ($q2) use ($q) {
+                $q2->where('kegiatan', 'like', "%{$q}%")
+                   ->orWhere('sub_kegiatan', 'like', "%{$q}%")
+                   ->orWhere('program', 'like', "%{$q}%")
+                   ->orWhere('sasaran_strategis', 'like', "%{$q}%")
+                   ->orWhere('indikator_kinerja', 'like', "%{$q}%");
+            });
+        }
 
         // ── Tahun Filter ────────────────────────────────────────────────────
         // if ($request->filled('tahun')) {
