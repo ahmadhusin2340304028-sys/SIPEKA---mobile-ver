@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sipeka/models/undangan_model.dart';
 
 class DioProvider {
   static String get baseApiUrl {
@@ -19,7 +21,14 @@ class DioProvider {
     try {
       var response = await Dio().post(
         '$baseApiUrl/login',
-        data: {'username': username, 'password': password},
+        data: {'username': username.trim(), 'password': password},
+        options: Options(
+          validateStatus: (status) => status != null && status < 500,
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+        ),
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -32,8 +41,11 @@ class DioProvider {
 
         return true;
       }
+      print('Login gagal status: ${response.statusCode}');
+      print('Login gagal body: ${response.data}');
       return false;
     } catch (error) {
+      print('Login request error: $error');
       return false;
     }
   }
@@ -361,4 +373,159 @@ class DioProvider {
     // Tambahkan kedua method di atas
   }
   */
+
+  // ════════════════════════════════════════════════════════════════════════════
+// TAMBAHKAN method-method ini ke dalam class DioProvider yang sudah ada
+// di lib/providers/dio_provider.dart
+// ════════════════════════════════════════════════════════════════════════════
+
+  // ════════════════════════════════════════════════════════════════════════════
+// TAMBAHKAN method-method ini ke dalam class DioProvider yang sudah ada
+// di lib/providers/dio_provider.dart
+// Jangan lupa: import '../models/undangan_model.dart';
+// ════════════════════════════════════════════════════════════════════════════
+
+  // ── Undangan ──────────────────────────────────────────────────────────────
+
+  /// GET /api/undangan
+  /// Sama persis dengan getKegiatan() — return Map dengan pagination info.
+  /// Provider yang urus infinite scroll, bukan di sini.
+  Future<Map<String, dynamic>?> getUndangan({
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      final response = await Dio().get(
+        '$baseApiUrl/undangan',
+        queryParameters: {
+          'page': page,
+          'per_page': perPage,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      print('getUndangan status: ${response.statusCode}, page: $page');
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        final body = response.data['data'];
+
+        int toInt(dynamic v, int fallback) {
+          if (v is int) return v;
+          if (v is String) return int.tryParse(v) ?? fallback;
+          return fallback;
+        }
+
+        // Paginated response: { data: [...], current_page, last_page, ... }
+        if (body is Map && body['data'] != null) {
+          final list = body['data'] as List<dynamic>;
+          return {
+            'items': list
+                .map((e) => UndanganModel.fromJson(e as Map<String, dynamic>))
+                .toList(),
+            'current_page': toInt(body['current_page'], page),
+            'last_page':    toInt(body['last_page'], page),
+            'per_page':     toInt(body['per_page'], perPage),
+            'total':        toInt(body['total'], list.length),
+          };
+        }
+
+        // Fallback: body adalah List langsung (non-paginated)
+        if (body is List) {
+          return {
+            'items': body
+                .map((e) => UndanganModel.fromJson(e as Map<String, dynamic>))
+                .toList(),
+            'current_page': 1,
+            'last_page':    1,
+            'per_page':     body.length,
+            'total':        body.length,
+          };
+        }
+      }
+      return null;
+    } catch (e, st) {
+      print('getUndangan error: $e\n$st');
+      return null;
+    }
+  }
+
+  /// POST /api/undangan/{id}/kehadiran
+  Future<Map<String, dynamic>?> postKehadiran({
+    required int id,
+    String? delegasi,
+    List<int>? buktiBytes,
+    String? buktiFileName,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      final formData = FormData.fromMap({
+        if (delegasi != null && delegasi.isNotEmpty) 'delegasi': delegasi,
+        if (buktiBytes != null && buktiFileName != null)
+          'bukti': MultipartFile.fromBytes(buktiBytes, filename: buktiFileName),
+      });
+
+      final response = await Dio().post(
+        '$baseApiUrl/undangan/$id/kehadiran',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      print('postKehadiran status: ${response.statusCode}');
+
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data as Map<String, dynamic>;
+      }
+      return null;
+    } on DioException catch (e) {
+      print('postKehadiran DioException: ${e.response?.statusCode}');
+      return null;
+    } catch (e, st) {
+      print('postKehadiran error: $e\n$st');
+      return null;
+    }
+  }
+
+  /// POST /api/undangan/{id}/tidak-hadir
+  Future<Map<String, dynamic>?> postTidakHadir({required int id}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      final response = await Dio().post(
+        '$baseApiUrl/undangan/$id/tidak-hadir',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        ),
+      );
+
+      print('postTidakHadir status: ${response.statusCode}');
+
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e, st) {
+      print('postTidakHadir error: $e\n$st');
+      return null;
+    }
+  }
 }
+// ════════════════════════════════════════════════════════════════════════════

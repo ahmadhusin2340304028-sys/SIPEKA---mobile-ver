@@ -77,29 +77,34 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/upload-bukti', [RealisasiController::class, 'uploadBukti'])
         ->middleware('bidang.access');
 
-    // ── Undangan ──────────────────────────────────────────────────────────────
-    Route::prefix('undangan')->group(function () {
 
-        // READ → semua role, data difilter per bidang di controller
-        Route::get('/',    [UndanganController::class, 'index']);
-        Route::get('/{id}', [UndanganController::class, 'show'])->where('id', '[0-9]+');
+        // ── Undangan ──────────────────────────────────────────────────────────────────
+        Route::prefix('undangan')->group(function () {
 
-        // WRITE → admin + staff bidang
-        Route::middleware('bidang.access')->group(function () {
+            // READ → semua role, data difilter per bidang di controller
+            Route::get('/',     [UndanganController::class, 'index']);
+            Route::get('/{id}', [UndanganController::class, 'show'])->where('id', '[0-9]+');
 
-            Route::post('/',       [UndanganController::class, 'store']);
+            // WRITE → admin + staff bidang
+            Route::middleware('bidang.access')->group(function () {
 
-            Route::put('/{id}',    [UndanganController::class, 'update'])
-                ->where('id', '[0-9]+');
+                Route::post('/', [UndanganController::class, 'store']);
 
-            // Update kehadiran (staff bisa lakukan untuk undangan bidangnya)
-            Route::post('/{id}/kehadiran', [UndanganController::class, 'updateKehadiran'])
-                ->where('id', '[0-9]+');
+                Route::put('/{id}', [UndanganController::class, 'update'])
+                    ->where('id', '[0-9]+');
 
-            // Hapus hanya admin
-            Route::delete('/{id}', [UndanganController::class, 'destroy'])
-                ->where('id', '[0-9]+')
-                ->middleware('role:Admin');
+                // Konfirmasi hadir (upload bukti + delegasi opsional)
+                Route::post('/{id}/kehadiran', [UndanganController::class, 'updateKehadiran'])
+                    ->where('id', '[0-9]+');
+
+                // Tandai tidak hadir
+                Route::post('/{id}/tidak-hadir', [UndanganController::class, 'tidakHadir'])
+                    ->where('id', '[0-9]+');
+
+                // Hapus — admin saja
+                Route::delete('/{id}', [UndanganController::class, 'destroy'])
+                    ->where('id', '[0-9]+')
+                    ->middleware('role:Admin');
+            });
         });
-    });
 });

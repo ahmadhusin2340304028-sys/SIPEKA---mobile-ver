@@ -612,15 +612,15 @@ class _TriwulanCardState extends State<_TriwulanCard> {
 
   Color get _statusColor {
     if (!_hasData) return AppColors.textHint;
-    if (widget.data.fisikAkumulatif >= 80) return AppColors.success;
-    if (widget.data.fisikAkumulatif >= 50) return AppColors.primary;
+    if (widget.data.fisikAkumulatif >= (widget.kegiatan.target*0.25)) return AppColors.success;
+    if (widget.data.fisikAkumulatif >= (widget.kegiatan.target*0.125)) return AppColors.primary;
     return AppColors.warning;
   }
 
   String get _statusLabel {
     if (!_hasData) return 'Belum Ada Data';
-    if (widget.data.fisikAkumulatif >= 80) return 'On Track';
-    if (widget.data.fisikAkumulatif >= 50) return 'Perlu Perhatian';
+    if (widget.data.fisikAkumulatif >= (widget.kegiatan.target*0.25)) return 'On Track';
+    if (widget.data.fisikAkumulatif >= (widget.kegiatan.target*0.125)) return 'Perlu Perhatian';
     return 'At Risk';
   }
 
