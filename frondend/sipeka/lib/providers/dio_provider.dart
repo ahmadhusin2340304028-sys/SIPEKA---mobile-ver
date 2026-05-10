@@ -478,6 +478,7 @@ class DioProvider {
         '$baseApiUrl/undangan/$id/kehadiran',
         data: formData,
         options: Options(
+          validateStatus: (status) => status != null && status < 500,
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
@@ -487,8 +488,10 @@ class DioProvider {
 
       print('postKehadiran status: ${response.statusCode}');
 
-      if (response.statusCode == 200 && response.data != null) {
-        return response.data as Map<String, dynamic>;
+      if (response.data != null) {
+        final body = response.data;
+        if (body is Map<String, dynamic>) return body;
+        if (body is Map) return Map<String, dynamic>.from(body);
       }
       return null;
     } on DioException catch (e) {
@@ -509,6 +512,7 @@ class DioProvider {
       final response = await Dio().post(
         '$baseApiUrl/undangan/$id/tidak-hadir',
         options: Options(
+          validateStatus: (status) => status != null && status < 500,
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
@@ -518,8 +522,10 @@ class DioProvider {
 
       print('postTidakHadir status: ${response.statusCode}');
 
-      if (response.statusCode == 200 && response.data != null) {
-        return response.data as Map<String, dynamic>;
+      if (response.data != null) {
+        final body = response.data;
+        if (body is Map<String, dynamic>) return body;
+        if (body is Map) return Map<String, dynamic>.from(body);
       }
       return null;
     } catch (e, st) {

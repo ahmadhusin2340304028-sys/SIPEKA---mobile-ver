@@ -150,7 +150,8 @@ class UndanganProvider extends ChangeNotifier {
         return true;
       }
 
-      _errorMessage = 'Gagal mengonfirmasi kehadiran.';
+      _errorMessage =
+          result?['message'] as String? ?? 'Gagal mengonfirmasi kehadiran.';
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan: $e';
     }
@@ -184,7 +185,8 @@ class UndanganProvider extends ChangeNotifier {
         return true;
       }
 
-      _errorMessage = 'Gagal memperbarui status.';
+      _errorMessage =
+          result?['message'] as String? ?? 'Gagal memperbarui status.';
     } catch (e) {
       _errorMessage = 'Terjadi kesalahan: $e';
     }

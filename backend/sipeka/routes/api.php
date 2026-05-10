@@ -85,6 +85,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/',     [UndanganController::class, 'index']);
             Route::get('/{id}', [UndanganController::class, 'show'])->where('id', '[0-9]+');
 
+            Route::post('/{id}/kehadiran', [UndanganController::class, 'updateKehadiran'])
+                ->where('id', '[0-9]+');
+
+            Route::post('/{id}/tidak-hadir', [UndanganController::class, 'tidakHadir'])
+                ->where('id', '[0-9]+');
+
             // WRITE → admin + staff bidang
             Route::middleware('bidang.access')->group(function () {
 
@@ -94,13 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
                     ->where('id', '[0-9]+');
 
                 // Konfirmasi hadir (upload bukti + delegasi opsional)
-                Route::post('/{id}/kehadiran', [UndanganController::class, 'updateKehadiran'])
-                    ->where('id', '[0-9]+');
-
                 // Tandai tidak hadir
-                Route::post('/{id}/tidak-hadir', [UndanganController::class, 'tidakHadir'])
-                    ->where('id', '[0-9]+');
-
                 // Hapus — admin saja
                 Route::delete('/{id}', [UndanganController::class, 'destroy'])
                     ->where('id', '[0-9]+')

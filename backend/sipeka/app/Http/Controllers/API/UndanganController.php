@@ -188,16 +188,8 @@ class UndanganController extends Controller
         $user     = $request->user();
         $undangan = Undangan::findOrFail($id);
 
-        // Cek akses
-        if ($user->isStaffBidang()) {
-            $bidang = $user->getBidang();
-            if (!str_contains($undangan->bidang_terkait, $bidang)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Akses ditolak.',
-                ], 403);
-            }
-        }
+        // Semua bidang/pihak boleh konfirmasi hadir.
+        // bidang_terkait hanya dipakai sebagai informasi undangan.
 
         $validated = $request->validate([
             'delegasi' => 'nullable|string|max:500',
@@ -239,15 +231,7 @@ class UndanganController extends Controller
         $user     = $request->user();
         $undangan = Undangan::findOrFail($id);
 
-        if ($user->isStaffBidang()) {
-            $bidang = $user->getBidang();
-            if (!str_contains($undangan->bidang_terkait, $bidang)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Akses ditolak.',
-                ], 403);
-            }
-        }
+        // Semua bidang/pihak boleh menandai tidak hadir.
 
         $undangan->update([
             'menghadiri'      => 'Tidak Hadir',
@@ -257,7 +241,9 @@ class UndanganController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Undangan ditandai sebagai Tidak Hadir.',
-            'data'    => $undangan->fresh()->toArray(),
+            'data'    => array_merge($undangan->fresh()->toArray(), [
+                'bukti_url' => $undangan->fresh()->bukti_url,
+            ]),
         ]);
     }
 
@@ -310,11 +296,6 @@ class UndanganController extends Controller
 
     private function canRespond($user, Undangan $undangan): bool
     {
-        if (!$user->isStaffBidang()) {
-            return true;
-        }
-
-        $bidang = $user->getBidang();
-        return $bidang && str_contains($undangan->bidang_terkait, $bidang);
+        return true;
     }
 }
