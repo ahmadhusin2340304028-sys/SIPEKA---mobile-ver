@@ -87,29 +87,35 @@ class UndanganController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user  = $request->user();
-        $query = Undangan::query();
 
-        // Semua role yang login boleh melihat daftar undangan.
-        // Hak konfirmasi hadir/tidak hadir tetap dicek di endpoint aksi.
+        $baseQuery = Undangan::query();
 
         // Filter status kehadiran (opsional)
         if ($request->filled('status')) {
-            $query->where('menghadiri', $request->status);
+            $baseQuery->where('menghadiri', $request->status);
         }
 
-        $undangan = $query
+        // Total pending
+        $totalPending = (clone $baseQuery)
+            ->where('status_kegiatan', 'Pending')
+            ->count();
+
+        // Data paginasi
+        $undangan = (clone $baseQuery)
             ->orderByDesc('tanggal')
             ->paginate($request->get('per_page', 20));
 
-        // Tambah field bukti_url
+        // Tambah field tambahan
         $undangan->getCollection()->transform(function ($item) use ($user) {
-            $item->bukti_url = $item->bukti_url;
+            $item->bukti_url   = $item->bukti_url;
             $item->can_respond = $this->canRespond($user, $item);
+
             return $item;
         });
 
         return response()->json([
             'success' => true,
+            'total_pending' => $totalPending,
             'data'    => $undangan,
         ]);
     }

@@ -434,6 +434,7 @@ class DioProvider {
             'last_page':    toInt(body['last_page'], page),
             'per_page':     toInt(body['per_page'], perPage),
             'total':        toInt(body['total'], list.length),
+            'total_pending': toInt(response.data['total_pending'], 0),
           };
         }
 

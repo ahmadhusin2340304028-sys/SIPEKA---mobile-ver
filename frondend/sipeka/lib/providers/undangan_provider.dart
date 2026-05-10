@@ -12,6 +12,7 @@ class UndanganProvider extends ChangeNotifier {
   StatusUndangan? _filterStatus;
   String? _lastMessage;
   String? _errorMessage;
+  int _totalPending = 0;
 
   // Pagination state
   int _currentPage = 0;
@@ -27,9 +28,7 @@ class UndanganProvider extends ChangeNotifier {
   StatusUndangan? get filterStatus => _filterStatus;
   String? get lastMessage => _lastMessage;
   String? get errorMessage => _errorMessage;
-
-  int get pendingCount =>
-      _undanganList.where((u) => u.status == StatusUndangan.pending).length;
+  int get pendingCount => _totalPending;
 
   // Filter dilakukan client-side dari data yang sudah di-load
   List<UndanganModel> get filteredUndangan {
@@ -83,9 +82,11 @@ class UndanganProvider extends ChangeNotifier {
         final items = result['items'] as List<UndanganModel>;
         final currentPage = result['current_page'] as int;
         final lastPage = result['last_page'] as int;
+        final totalPending = result['total_pending'] as int? ?? 0;
 
         if (reset) {
           _undanganList = items;
+          _totalPending = totalPending;
         } else {
           final existingIds = _undanganList.map((u) => u.id).toSet();
           _undanganList.addAll(items.where((u) => !existingIds.contains(u.id)));
