@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sipeka/models/undangan_model.dart';
 
@@ -11,6 +10,7 @@ class DioProvider {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return 'http://10.0.2.2:8000/api';
+        // return 'http://192.168.1.12:8000/api';
       default:
         return 'http://127.0.0.1:8000/api';
     }
@@ -41,11 +41,11 @@ class DioProvider {
 
         return true;
       }
-      print('Login gagal status: ${response.statusCode}');
-      print('Login gagal body: ${response.data}');
+      // print('Login gagal status: ${response.statusCode}');
+      // print('Login gagal body: ${response.data}');
       return false;
     } catch (error) {
-      print('Login request error: $error');
+      // print('Login request error: $error');
       return false;
     }
   }
@@ -100,7 +100,7 @@ class DioProvider {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
-      print('Fetching dashboard summary with token: $token'); // Debug log
+      // print('Fetching dashboard summary with token: $token'); // Debug log
 
       final response = await Dio().get(
         '$baseApiUrl/dashboard/summary',
@@ -112,7 +112,7 @@ class DioProvider {
         ),
       );
 
-      print('Dashboard status: ${response.statusCode}');
+      // print('Dashboard status: ${response.statusCode}');
       print('Dashboard body: ${response.data}');
 
       if (response.statusCode == 200 && response.data != null) {

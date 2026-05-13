@@ -9,6 +9,10 @@ class AppRoutes {
   static const String inputRealisasi = '/kegiatan/input-realisasi';
   static const String undangan = '/undangan';
   static const String tentang = '/tentang';
+
+  // Admin routes
+  static const String adminKegiatan = '/admin/kegiatan';
+  static const String adminUndangan = '/admin/undangan';
 }
 
 class AppStrings {
