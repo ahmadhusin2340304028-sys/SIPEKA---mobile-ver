@@ -1,5 +1,6 @@
 // lib/screens/admin/admin_kegiatan_screen.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -28,7 +29,9 @@ class AdminKegiatanScreen extends StatefulWidget {
 class _AdminKegiatanScreenState extends State<AdminKegiatanScreen> {
   final _scrollCtrl = ScrollController();
   final _searchCtrl = TextEditingController();
-  String _searchQuery = '';
+
+  // ✅ Debounce timer — tunda request sampai user berhenti mengetik
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -40,32 +43,38 @@ class _AdminKegiatanScreenState extends State<AdminKegiatanScreen> {
   }
 
   void _onScroll() {
-    if (_scrollCtrl.position.pixels >= _scrollCtrl.position.maxScrollExtent - 200) {
+    if (_scrollCtrl.position.pixels >=
+        _scrollCtrl.position.maxScrollExtent - 200) {
       context.read<AdminProvider>().loadMoreKegiatan();
     }
   }
 
+  // ✅ Server-side search dengan debounce 400ms
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      context.read<AdminProvider>().setSearch(value);
+    });
+  }
+
+  void _clearSearch() {
+    _searchCtrl.clear();
+    _debounce?.cancel();
+    context.read<AdminProvider>().clearSearch();
+  }
+
   @override
   void dispose() {
+    _debounce?.cancel();
+    _scrollCtrl.removeListener(_onScroll);
     _scrollCtrl.dispose();
     _searchCtrl.dispose();
     super.dispose();
   }
 
-  List<KegiatanModel> _filtered(List<KegiatanModel> list) {
-    if (_searchQuery.isEmpty) return list;
-    final q = _searchQuery.toLowerCase();
-    return list.where((k) =>
-      k.nama.toLowerCase().contains(q) ||
-      k.bidang.toLowerCase().contains(q) ||
-      k.program.toLowerCase().contains(q)
-    ).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     final ap = context.watch<AdminProvider>();
-    final list = _filtered(ap.kegiatanList);
 
     return Scaffold(
       appBar: AppBar(
@@ -84,46 +93,51 @@ class _AdminKegiatanScreenState extends State<AdminKegiatanScreen> {
       drawer: const CustomDrawer(),
       body: Column(
         children: [
-          // Search bar
+          // ── Search bar ────────────────────────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: TextField(
               controller: _searchCtrl,
-              onChanged: (v) => setState(() => _searchQuery = v),
+              // ✅ Pakai server-side search, bukan setState
+              onChanged: _onSearchChanged,
               decoration: InputDecoration(
                 hintText: 'Cari kegiatan, bidang, program...',
-                prefixIcon: const Icon(Icons.search_rounded, size: 20, color: AppColors.textMuted),
-                suffixIcon: _searchQuery.isNotEmpty
+                prefixIcon: const Icon(Icons.search_rounded,
+                    size: 20, color: AppColors.textMuted),
+                suffixIcon: ap.searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 18, color: AppColors.textMuted),
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          setState(() => _searchQuery = '');
-                        },
+                        icon: const Icon(Icons.clear_rounded,
+                            size: 18, color: AppColors.textMuted),
+                        onPressed: _clearSearch,
                       )
                     : null,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
             ),
           ),
           const Divider(height: 0),
 
-          // Stats bar
+          // ── Stats bar ─────────────────────────────────────────────────
           Container(
             color: AppColors.surfaceGray,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
                 Text(
-                  '${ap.total} kegiatan total',
-                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  '${ap.total} kegiatan',
+                  style: const TextStyle(
+                      fontSize: 12, color: AppColors.textMuted),
                 ),
-                if (_searchQuery.isNotEmpty) ...[
-                  const Text(' · ', style: TextStyle(color: AppColors.textMuted)),
+                if (ap.searchQuery.isNotEmpty) ...[
+                  const Text(' · ',
+                      style: TextStyle(color: AppColors.textMuted)),
                   Text(
-                    '${list.length} hasil pencarian',
-                    style: const TextStyle(fontSize: 12, color: AppColors.primary),
+                    'hasil pencarian "${ap.searchQuery}"',
+                    style: const TextStyle(
+                        fontSize: 12, color: AppColors.primary),
                   ),
                 ],
               ],
@@ -131,21 +145,38 @@ class _AdminKegiatanScreenState extends State<AdminKegiatanScreen> {
           ),
           const Divider(height: 0),
 
-          // List
+          // ── List ──────────────────────────────────────────────────────
           Expanded(
             child: ap.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : list.isEmpty
+                : ap.kegiatanList.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.folder_open_rounded, size: 56, color: AppColors.textHint),
+                            Icon(
+                              ap.searchQuery.isNotEmpty
+                                  ? Icons.search_off_rounded
+                                  : Icons.folder_open_rounded,
+                              size: 56,
+                              color: AppColors.textHint,
+                            ),
                             const SizedBox(height: 12),
                             Text(
-                              _searchQuery.isNotEmpty ? 'Tidak ada hasil pencarian' : 'Belum ada data kegiatan',
-                              style: const TextStyle(color: AppColors.textMuted),
+                              ap.searchQuery.isNotEmpty
+                                  ? 'Tidak ada hasil untuk "${ap.searchQuery}"'
+                                  : 'Belum ada data kegiatan',
+                              style: const TextStyle(
+                                  color: AppColors.textMuted),
+                              textAlign: TextAlign.center,
                             ),
+                            if (ap.searchQuery.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              TextButton(
+                                onPressed: _clearSearch,
+                                child: const Text('Hapus pencarian'),
+                              ),
+                            ],
                           ],
                         ),
                       )
@@ -154,22 +185,31 @@ class _AdminKegiatanScreenState extends State<AdminKegiatanScreen> {
                         child: ListView.separated(
                           controller: _scrollCtrl,
                           padding: const EdgeInsets.all(16),
-                          itemCount: list.length + (ap.hasMore ? 1 : 0),
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          itemCount: ap.kegiatanList.length +
+                              (ap.hasMore ? 1 : 0),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
                           itemBuilder: (ctx, i) {
-                            if (i >= list.length) {
+                            if (i >= ap.kegiatanList.length) {
                               return const Center(
                                 child: Padding(
                                   padding: EdgeInsets.all(16),
-                                  child: SizedBox(width: 22, height: 22,
-                                    child: CircularProgressIndicator(strokeWidth: 2)),
+                                  child: SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  ),
                                 ),
                               );
                             }
+                            final k = ap.kegiatanList[i];
                             return _KegiatanAdminCard(
-                              kegiatan: list[i],
-                              onEdit: () => _showKegiatanDialog(context, kegiatan: list[i]),
-                              onHapus: () => _confirmHapusKegiatan(context, list[i]),
+                              kegiatan: k,
+                              onEdit: () =>
+                                  _showKegiatanDialog(context, kegiatan: k),
+                              onHapus: () =>
+                                  _confirmHapusKegiatan(context, k),
                             );
                           },
                         ),
@@ -195,13 +235,16 @@ class _AdminKegiatanScreenState extends State<AdminKegiatanScreen> {
     );
   }
 
-  Future<void> _confirmHapusKegiatan(BuildContext context, KegiatanModel kegiatan) async {
+  Future<void> _confirmHapusKegiatan(
+      BuildContext context, KegiatanModel kegiatan) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16)),
         title: const Row(children: [
-          Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 22),
+          Icon(Icons.warning_amber_rounded,
+              color: AppColors.danger, size: 22),
           SizedBox(width: 8),
           Text('Konfirmasi Hapus'),
         ]),
@@ -219,13 +262,15 @@ class _AdminKegiatanScreenState extends State<AdminKegiatanScreen> {
               ),
               child: Text(
                 kegiatan.nama,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w500),
               ),
             ),
             const SizedBox(height: 8),
             const Text(
               'Data realisasi fisik, anggaran, keterangan, dan bukti akan ikut terhapus.',
-              style: TextStyle(fontSize: 12, color: AppColors.danger),
+              style:
+                  TextStyle(fontSize: 12, color: AppColors.danger),
             ),
           ],
         ),
@@ -236,7 +281,8 @@ class _AdminKegiatanScreenState extends State<AdminKegiatanScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            style: FilledButton.styleFrom(
+                backgroundColor: AppColors.danger),
             child: const Text('Hapus'),
           ),
         ],
@@ -248,9 +294,11 @@ class _AdminKegiatanScreenState extends State<AdminKegiatanScreen> {
       final ok = await ap.hapusKegiatan(kegiatan.id);
       if (mounted) {
         if (ok) {
-          AppUtils.showSuccess(context, ap.successMessage ?? 'Berhasil dihapus');
+          AppUtils.showSuccess(
+              context, ap.successMessage ?? 'Berhasil dihapus');
         } else {
-          AppUtils.showError(context, ap.errorMessage ?? 'Gagal menghapus');
+          AppUtils.showError(
+              context, ap.errorMessage ?? 'Gagal menghapus');
         }
         ap.clearMessages();
       }
@@ -273,13 +321,20 @@ class _KegiatanAdminCard extends StatelessWidget {
 
   Color get _bidangColor {
     switch (kegiatan.bidang) {
-      case 'Perencanaan dan Keuangan': return const Color(0xFF1A56DB);
-      case 'Umum dan Kepegawaian': return const Color(0xFF16A34A);
-      case 'Rehabilitasi Sosial': return const Color(0xFF7C3AED);
-      case 'Perlindungan dan Jaminan Sosial': return const Color(0xFFD97706);
-      case 'Pemberdayaan Sosial': return const Color(0xFF0891B2);
-      case 'Pemberdayaan Masyarakat': return const Color(0xFF65A30D);
-      default: return AppColors.textMuted;
+      case 'Perencanaan dan Keuangan':
+        return const Color(0xFF1A56DB);
+      case 'Umum dan Kepegawaian':
+        return const Color(0xFF16A34A);
+      case 'Rehabilitasi Sosial':
+        return const Color(0xFF7C3AED);
+      case 'Perlindungan dan Jaminan Sosial':
+        return const Color(0xFFD97706);
+      case 'Pemberdayaan Sosial':
+        return const Color(0xFF0891B2);
+      case 'Pemberdayaan Masyarakat':
+        return const Color(0xFF65A30D);
+      default:
+        return AppColors.textMuted;
     }
   }
 
@@ -299,26 +354,34 @@ class _KegiatanAdminCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
             decoration: BoxDecoration(
               color: _bidangColor.withOpacity(0.05),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              border: Border(bottom: BorderSide(color: _bidangColor.withOpacity(0.15), width: 0.5)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+              border: Border(
+                  bottom: BorderSide(
+                      color: _bidangColor.withOpacity(0.15), width: 0.5)),
             ),
             child: Row(
               children: [
                 Container(
                   width: 6,
                   height: 6,
-                  decoration: BoxDecoration(color: _bidangColor, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                      color: _bidangColor, shape: BoxShape.circle),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     kegiatan.bidang,
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _bidangColor),
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: _bidangColor),
                   ),
                 ),
                 Text(
                   kegiatan.tahun.toString(),
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  style: const TextStyle(
+                      fontSize: 11, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -332,14 +395,19 @@ class _KegiatanAdminCard extends StatelessWidget {
               children: [
                 Text(
                   kegiatan.nama,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary, height: 1.35),
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                      height: 1.35),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   kegiatan.program,
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  style: const TextStyle(
+                      fontSize: 11, color: AppColors.textMuted),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -347,12 +415,14 @@ class _KegiatanAdminCard extends StatelessWidget {
                 Row(
                   children: [
                     _InfoChip(
-                      label: 'Target: ${kegiatan.target.toStringAsFixed(0)} ${kegiatan.satuan}',
+                      label:
+                          'Target: ${kegiatan.target.toStringAsFixed(0)} ${kegiatan.satuan}',
                       icon: Icons.flag_rounded,
                     ),
                     const SizedBox(width: 6),
                     _InfoChip(
-                      label: AppUtils.formatCurrencyCompact(kegiatan.paguAnggaran),
+                      label: AppUtils.formatCurrencyCompact(
+                          kegiatan.paguAnggaran),
                       icon: Icons.account_balance_wallet_rounded,
                     ),
                   ],
@@ -370,10 +440,12 @@ class _KegiatanAdminCard extends StatelessWidget {
                 TextButton.icon(
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit_rounded, size: 15),
-                  label: const Text('Edit', style: TextStyle(fontSize: 12)),
+                  label: const Text('Edit',
+                      style: TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
                     minimumSize: Size.zero,
                   ),
                 ),
@@ -381,10 +453,12 @@ class _KegiatanAdminCard extends StatelessWidget {
                 TextButton.icon(
                   onPressed: onHapus,
                   icon: const Icon(Icons.delete_outline_rounded, size: 15),
-                  label: const Text('Hapus', style: TextStyle(fontSize: 12)),
+                  label: const Text('Hapus',
+                      style: TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.danger,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
                     minimumSize: Size.zero,
                   ),
                 ),
@@ -416,7 +490,9 @@ class _InfoChip extends StatelessWidget {
         children: [
           Icon(icon, size: 11, color: AppColors.textMuted),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 10, color: AppColors.textMuted)),
         ],
       ),
     );
@@ -453,25 +529,41 @@ class _KegiatanDialogState extends State<_KegiatanDialog> {
   void initState() {
     super.initState();
     final k = widget.kegiatan;
-    _sasaranCtrl = TextEditingController(text: k?.sasaranStrategis ?? '');
-    _indikatorCtrl = TextEditingController(text: k?.indikatorKinerja ?? '');
+    _sasaranCtrl =
+        TextEditingController(text: k?.sasaranStrategis ?? '');
+    _indikatorCtrl =
+        TextEditingController(text: k?.indikatorKinerja ?? '');
     _programCtrl = TextEditingController(text: k?.program ?? '');
     _kegiatanCtrl = TextEditingController(text: k?.kegiatan ?? '');
-    _subKegiatanCtrl = TextEditingController(text: k?.subKegiatan ?? '');
+    _subKegiatanCtrl =
+        TextEditingController(text: k?.subKegiatan ?? '');
     _satuanCtrl = TextEditingController(text: k?.satuan ?? '');
-    _targetCtrl = TextEditingController(text: k != null ? k.target.toStringAsFixed(0) : '');
-    _tahunCtrl = TextEditingController(text: k?.tahun.toString() ?? DateTime.now().year.toString());
-    _paguCtrl = TextEditingController(text: k != null ? k.paguAnggaran.toStringAsFixed(0) : '');
+    _targetCtrl = TextEditingController(
+        text: k != null ? k.target.toStringAsFixed(0) : '');
+    _tahunCtrl = TextEditingController(
+        text: k?.tahun.toString() ?? DateTime.now().year.toString());
+    _paguCtrl = TextEditingController(
+        text: k != null ? k.paguAnggaran.toStringAsFixed(0) : '');
     _selectedBidang = k?.bidang;
-    if (_selectedBidang != null && !kBidangList.contains(_selectedBidang)) {
+    if (_selectedBidang != null &&
+        !kBidangList.contains(_selectedBidang)) {
       _selectedBidang = null;
     }
   }
 
   @override
   void dispose() {
-    for (final c in [_sasaranCtrl, _indikatorCtrl, _programCtrl, _kegiatanCtrl,
-        _subKegiatanCtrl, _satuanCtrl, _targetCtrl, _tahunCtrl, _paguCtrl]) {
+    for (final c in [
+      _sasaranCtrl,
+      _indikatorCtrl,
+      _programCtrl,
+      _kegiatanCtrl,
+      _subKegiatanCtrl,
+      _satuanCtrl,
+      _targetCtrl,
+      _tahunCtrl,
+      _paguCtrl,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -510,10 +602,12 @@ class _KegiatanDialogState extends State<_KegiatanDialog> {
     if (!mounted) return;
     if (ok) {
       Navigator.pop(context);
-      AppUtils.showSuccess(context, ap.successMessage ?? 'Berhasil disimpan');
+      AppUtils.showSuccess(
+          context, ap.successMessage ?? 'Berhasil disimpan');
       ap.clearMessages();
     } else {
-      AppUtils.showError(context, ap.errorMessage ?? 'Gagal menyimpan');
+      AppUtils.showError(
+          context, ap.errorMessage ?? 'Gagal menyimpan');
       ap.clearMessages();
     }
   }
@@ -523,8 +617,10 @@ class _KegiatanDialogState extends State<_KegiatanDialog> {
     final ap = context.watch<AdminProvider>();
 
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      insetPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -532,7 +628,9 @@ class _KegiatanDialogState extends State<_KegiatanDialog> {
           Container(
             padding: const EdgeInsets.fromLTRB(20, 18, 16, 16),
             decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
+              border: Border(
+                  bottom:
+                      BorderSide(color: AppColors.border, width: 0.5)),
             ),
             child: Row(
               children: [
@@ -543,13 +641,17 @@ class _KegiatanDialogState extends State<_KegiatanDialog> {
                     color: AppColors.primaryLight,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.task_alt_rounded, size: 18, color: AppColors.primary),
+                  child: const Icon(Icons.task_alt_rounded,
+                      size: 18, color: AppColors.primary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     _isEdit ? 'Edit Kegiatan' : 'Tambah Kegiatan',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary),
                   ),
                 ),
                 IconButton(
@@ -570,11 +672,15 @@ class _KegiatanDialogState extends State<_KegiatanDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildField('Sasaran Strategis', _sasaranCtrl, maxLines: 3),
-                    _buildField('Indikator Kinerja', _indikatorCtrl, maxLines: 2),
+                    _buildField('Sasaran Strategis', _sasaranCtrl,
+                        maxLines: 3),
+                    _buildField('Indikator Kinerja', _indikatorCtrl,
+                        maxLines: 2),
                     _buildField('Program', _programCtrl, maxLines: 2),
-                    _buildField('Kegiatan', _kegiatanCtrl, maxLines: 2),
-                    _buildField('Sub Kegiatan', _subKegiatanCtrl, maxLines: 2),
+                    _buildField('Kegiatan', _kegiatanCtrl,
+                        maxLines: 2),
+                    _buildField('Sub Kegiatan', _subKegiatanCtrl,
+                        maxLines: 2),
 
                     // Row: Satuan | Target | Tahun
                     Row(
@@ -583,50 +689,75 @@ class _KegiatanDialogState extends State<_KegiatanDialog> {
                         Expanded(
                           flex: 2,
                           child: _buildField('Satuan', _satuanCtrl,
-                            hint: '%, Orang, Lembaga'),
+                              hint: '%, Orang, Lembaga'),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           flex: 2,
                           child: _buildField('Target', _targetCtrl,
-                            inputType: const TextInputType.numberWithOptions(decimal: true),
-                            formatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))]),
+                              inputType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                              formatters: [
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'[\d.]'))
+                              ]),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           flex: 2,
                           child: _buildField('Tahun', _tahunCtrl,
-                            inputType: TextInputType.number,
-                            formatters: [FilteringTextInputFormatter.digitsOnly],
-                            validator: (v) {
-                              if (v == null || v.isEmpty) return 'Wajib';
-                              final y = int.tryParse(v);
-                              if (y == null || y < 2020 || y > 2099) return 'Thn tidak valid';
-                              return null;
-                            }),
+                              inputType: TextInputType.number,
+                              formatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              validator: (v) {
+                                if (v == null || v.isEmpty) {
+                                  return 'Wajib';
+                                }
+                                final y = int.tryParse(v);
+                                if (y == null ||
+                                    y < 2020 ||
+                                    y > 2099) {
+                                  return 'Thn tidak valid';
+                                }
+                                return null;
+                              }),
                         ),
                       ],
                     ),
 
                     _buildField('Pagu Anggaran (Rp)', _paguCtrl,
-                      hint: 'Contoh: 150000000',
-                      inputType: TextInputType.number,
-                      formatters: [FilteringTextInputFormatter.digitsOnly],
-                      prefix: 'Rp '),
+                        hint: 'Contoh: 150000000',
+                        inputType: TextInputType.number,
+                        formatters: [
+                          FilteringTextInputFormatter.digitsOnly
+                        ],
+                        prefix: 'Rp '),
 
-                    // Bidang / Urusan
+                    // Bidang
                     const SizedBox(height: 4),
                     const Text('Urusan / Bidang',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondary)),
                     const SizedBox(height: 6),
                     DropdownButtonFormField<String>(
                       value: _selectedBidang,
-                      decoration: const InputDecoration(hintText: '-- Pilih Urusan --'),
+                      decoration: const InputDecoration(
+                          hintText: '-- Pilih Urusan --'),
                       items: kBidangList
-                          .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 13))))
+                          .map((b) => DropdownMenuItem(
+                              value: b,
+                              child: Text(b,
+                                  style: const TextStyle(
+                                      fontSize: 13))))
                           .toList(),
-                      onChanged: (v) => setState(() => _selectedBidang = v),
-                      validator: (v) => v == null ? 'Pilih urusan' : null,
+                      onChanged: (v) =>
+                          setState(() => _selectedBidang = v),
+                      validator: (v) =>
+                          v == null ? 'Pilih urusan' : null,
                     ),
                     const SizedBox(height: 8),
                   ],
@@ -635,17 +766,21 @@ class _KegiatanDialogState extends State<_KegiatanDialog> {
             ),
           ),
 
-          // Footer buttons
+          // Footer
           Container(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
             decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
+              border: Border(
+                  top: BorderSide(
+                      color: AppColors.border, width: 0.5)),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: ap.isSaving ? null : () => Navigator.pop(context),
+                    onPressed: ap.isSaving
+                        ? null
+                        : () => Navigator.pop(context),
                     child: const Text('Batal'),
                   ),
                 ),
@@ -655,10 +790,15 @@ class _KegiatanDialogState extends State<_KegiatanDialog> {
                   child: ElevatedButton.icon(
                     onPressed: ap.isSaving ? null : _submit,
                     icon: ap.isSaving
-                        ? const SizedBox(width: 16, height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white))
                         : const Icon(Icons.save_rounded, size: 16),
-                    label: Text(ap.isSaving ? 'Menyimpan...' : 'Simpan'),
+                    label: Text(
+                        ap.isSaving ? 'Menyimpan...' : 'Simpan'),
                   ),
                 ),
               ],
@@ -685,7 +825,10 @@ class _KegiatanDialogState extends State<_KegiatanDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textSecondary)),
           const SizedBox(height: 6),
           TextFormField(
             controller: ctrl,
@@ -695,9 +838,13 @@ class _KegiatanDialogState extends State<_KegiatanDialog> {
             decoration: InputDecoration(
               hintText: hint ?? label,
               prefixText: prefix,
-              prefixStyle: const TextStyle(color: AppColors.textSecondary),
+              prefixStyle:
+                  const TextStyle(color: AppColors.textSecondary),
             ),
-            validator: validator ?? (v) => (v == null || v.trim().isEmpty) ? '$label wajib diisi' : null,
+            validator: validator ??
+                (v) => (v == null || v.trim().isEmpty)
+                    ? '$label wajib diisi'
+                    : null,
           ),
         ],
       ),

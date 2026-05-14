@@ -9,8 +9,8 @@ class DioProvider {
 
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return 'http://10.0.2.2:8000/api';
-        // return 'http://192.168.1.12:8000/api';
+        // return 'http://10.0.2.2:8000/api';
+        return 'http://192.168.1.9:8000/api';
       default:
         return 'http://127.0.0.1:8000/api';
     }

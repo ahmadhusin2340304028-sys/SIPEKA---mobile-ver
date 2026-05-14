@@ -7,23 +7,14 @@ import '../../core/utils/app_utils.dart';
 import '../../providers/admin_provider.dart';
 import '../../widgets/custom_drawer.dart';
 
-// Semua role yang bisa diundang (sesuai BIDANG_ROLE_MAP di User.php)
+/// Semua pihak yang bisa diundang (sesuai BIDANG_ROLE_MAP di User.php)
 const List<String> kPihakTerkaitList = [
   'Kepala Dinas',
-  'Kepala Bidang Pemberdayaan Masyarakat',
+  'Sekretaris',
   'Kepala Bidang Sosial',
+  'Kepala Bidang Pemberdayaan Masyarakat',
   'Kepala Sub Bagian Perencanaan',
   'Kepala Sub Bagian Kepegawaian',
-  'Sekretaris',
-  'Perencanaan dan Keuangan',
-  'Umum dan Kepegawaian',
-  'Rehabilitasi Sosial',
-  'Perlindungan dan Jaminan Sosial',
-  'Pemberdayaan Sosial',
-  'Pemberdayaan Masyarakat',
-];
-
-const List<String> kBidangUndangan = [
   'Perencanaan dan Keuangan',
   'Umum dan Kepegawaian',
   'Rehabilitasi Sosial',
@@ -74,7 +65,8 @@ class _AdminUndanganScreenState extends State<AdminUndanganScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.mail_outline_rounded, size: 56, color: AppColors.textHint),
+                      const Icon(Icons.mail_outline_rounded,
+                          size: 56, color: AppColors.textHint),
                       const SizedBox(height: 12),
                       const Text('Belum ada data undangan',
                           style: TextStyle(color: AppColors.textMuted)),
@@ -121,13 +113,16 @@ class _AdminUndanganScreenState extends State<AdminUndanganScreen> {
     );
   }
 
-  Future<void> _confirmHapus(BuildContext context, Map<String, dynamic> u) async {
+  Future<void> _confirmHapus(
+      BuildContext context, Map<String, dynamic> u) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(children: [
-          Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 22),
+          Icon(Icons.warning_amber_rounded,
+              color: AppColors.danger, size: 22),
           SizedBox(width: 8),
           Text('Konfirmasi Hapus'),
         ]),
@@ -144,8 +139,9 @@ class _AdminUndanganScreenState extends State<AdminUndanganScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                u['judul_kegiatan'] ?? '-',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                u['judul_kegiatan']?.toString() ?? '-',
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w500),
               ),
             ),
           ],
@@ -157,7 +153,8 @@ class _AdminUndanganScreenState extends State<AdminUndanganScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            style:
+                FilledButton.styleFrom(backgroundColor: AppColors.danger),
             child: const Text('Hapus'),
           ),
         ],
@@ -171,7 +168,8 @@ class _AdminUndanganScreenState extends State<AdminUndanganScreen> {
         if (ok) {
           AppUtils.showSuccess(context, 'Undangan berhasil dihapus');
         } else {
-          AppUtils.showError(context, ap.errorMessage ?? 'Gagal menghapus');
+          AppUtils.showError(
+              context, ap.errorMessage ?? 'Gagal menghapus');
         }
         ap.clearMessages();
       }
@@ -192,20 +190,34 @@ class _UndanganAdminCard extends StatelessWidget {
     required this.onHapus,
   });
 
-  String get _statusLabel => data['status_kegiatan'] ?? '-';
-  bool get _isSelesai => _statusLabel == 'Sudah Dilaksanakan';
+  /// Parse bidang_terkait (comma-separated string) ke list
+  List<String> get _pihakList {
+    final raw = data['bidang_terkait']?.toString() ?? '';
+    if (raw.isEmpty) return [];
+    return raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  }
 
-  Color get _statusColor => _isSelesai ? AppColors.success : AppColors.warning;
-  Color get _statusBg => _isSelesai ? AppColors.successLight : AppColors.warningLight;
+  String get _menghadiriLabel => data['menghadiri']?.toString() ?? 'Pending';
+
+  Color _menghadiriColor(String s) {
+    final lower = s.toLowerCase();
+    if (lower == 'tidak hadir') return AppColors.danger;
+    if (lower == 'pending') return AppColors.warning;
+    // Hadir atau nama bidang/username (berarti sudah hadir)
+    return AppColors.success;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final tanggal = data['tanggal']?.toString() ?? '-';
-    final waktu = data['waktu']?.toString() ?? '-';
+    final tanggalRaw = data['tanggal']?.toString() ?? '';
+    final tanggalDt = DateTime.tryParse(tanggalRaw);
+    final tanggal = tanggalDt != null ? AppUtils.formatDate(tanggalDt) : (tanggalRaw.isNotEmpty ? tanggalRaw : '-');
+    final waktuRaw = data['waktu']?.toString() ?? '';
+    final waktu = waktuRaw.length >= 5
+        ? waktuRaw.substring(0, 5)
+        : (waktuRaw.isNotEmpty ? waktuRaw : '-');
     final tempat = data['tempat']?.toString() ?? '-';
     final mengundang = data['pihak_mengundang']?.toString() ?? '-';
-    final bidang = data['bidang_terkait']?.toString() ?? '-';
-    final menghadiri = data['menghadiri']?.toString() ?? 'Pending';
 
     return Container(
       decoration: BoxDecoration(
@@ -216,76 +228,107 @@ class _UndanganAdminCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // ── Header: judul ──────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.fromLTRB(14, 11, 14, 10),
             decoration: const BoxDecoration(
               color: AppColors.surfaceGray,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
+              borderRadius:
+                  BorderRadius.vertical(top: Radius.circular(12)),
+              border: Border(
+                  bottom:
+                      BorderSide(color: AppColors.border, width: 0.5)),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    data['judul_kegiatan']?.toString() ?? '-',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: _statusBg,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    _isSelesai ? 'Selesai' : 'Belum',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: _statusColor),
-                  ),
-                ),
-              ],
+            child: Text(
+              data['judul_kegiatan']?.toString() ?? '-',
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
 
-          // Info
+          // ── Info ───────────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _MetaRow(Icons.calendar_today_rounded, '$tanggal · $waktu WIB'),
+                _MetaRow(Icons.calendar_today_rounded,
+                    '$tanggal · $waktu WIB'),
                 const SizedBox(height: 4),
                 _MetaRow(Icons.location_on_outlined, tempat),
                 const SizedBox(height: 4),
                 _MetaRow(Icons.business_rounded, mengundang),
-                const SizedBox(height: 4),
-                _MetaRow(Icons.domain_rounded, 'Bidang: $bidang'),
-                const SizedBox(height: 4),
-                _MetaRow(
-                  Icons.how_to_reg_rounded,
-                  'Kehadiran: $menghadiri',
-                  color: _menghadiriColor(menghadiri),
+                const SizedBox(height: 6),
+
+                // Pihak yang diundang (badges)
+                if (_pihakList.isNotEmpty) ...[
+                  const Row(
+                    children: [
+                      Icon(Icons.groups_rounded,
+                          size: 13, color: AppColors.textMuted),
+                      SizedBox(width: 6),
+                      Text(
+                        'Pihak yang diundang:',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.textMuted),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: _pihakList
+                        .map((p) => _PihakChip(label: p))
+                        .toList(),
+                  ),
+                  const SizedBox(height: 6),
+                ],
+
+                // Status kehadiran (read-only, diisi oleh user)
+                const Divider(height: 12),
+                Row(
+                  children: [
+                    const Icon(Icons.how_to_reg_rounded,
+                        size: 13, color: AppColors.textMuted),
+                    const SizedBox(width: 6),
+                    const Text('Kehadiran: ',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.textMuted)),
+                    Text(
+                      _menghadiriLabel,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _menghadiriColor(_menghadiriLabel),
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 4),
               ],
             ),
           ),
 
-          // Actions
+          // ── Actions ────────────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(10, 4, 10, 10),
+            padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton.icon(
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit_rounded, size: 15),
-                  label: const Text('Edit', style: TextStyle(fontSize: 12)),
+                  label:
+                      const Text('Edit', style: TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
                     minimumSize: Size.zero,
                   ),
                 ),
@@ -293,10 +336,12 @@ class _UndanganAdminCard extends StatelessWidget {
                 TextButton.icon(
                   onPressed: onHapus,
                   icon: const Icon(Icons.delete_outline_rounded, size: 15),
-                  label: const Text('Hapus', style: TextStyle(fontSize: 12)),
+                  label: const Text('Hapus',
+                      style: TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.danger,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
                     minimumSize: Size.zero,
                   ),
                 ),
@@ -307,39 +352,63 @@ class _UndanganAdminCard extends StatelessWidget {
       ),
     );
   }
-
-  Color _menghadiriColor(String s) {
-    switch (s) {
-      case 'Hadir': return AppColors.success;
-      case 'Tidak Hadir': return AppColors.danger;
-      default: return AppColors.warning;
-    }
-  }
 }
+
+// ─── Helper Widgets ───────────────────────────────────────────────────────────
 
 class _MetaRow extends StatelessWidget {
   final IconData icon;
   final String text;
-  final Color? color;
-  const _MetaRow(this.icon, this.text, {this.color});
+  const _MetaRow(this.icon, this.text);
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? AppColors.textMuted;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 13, color: c),
+        Icon(icon, size: 13, color: AppColors.textMuted),
         const SizedBox(width: 6),
         Expanded(
-          child: Text(text, style: TextStyle(fontSize: 12, color: c)),
+          child: Text(text,
+              style: const TextStyle(
+                  fontSize: 12, color: AppColors.textMuted)),
         ),
       ],
     );
   }
 }
 
+class _PihakChip extends StatelessWidget {
+  final String label;
+  const _PihakChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: const Color(0xFFBFDBFE), width: 0.5),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: AppColors.primaryDark,
+        ),
+      ),
+    );
+  }
+}
+
 // ─── Undangan Dialog ──────────────────────────────────────────────────────────
+//
+// Admin hanya mengisi:
+//   judul_kegiatan, tanggal, waktu, tempat, pihak_mengundang, bidang_terkait
+//
+// Field menghadiri, bukti, delegasi diisi oleh user masing-masing (bukan admin).
 
 class _UndanganDialog extends StatefulWidget {
   final Map<String, dynamic>? data;
@@ -355,15 +424,11 @@ class _UndanganDialogState extends State<_UndanganDialog> {
   late final TextEditingController _judulCtrl;
   late final TextEditingController _tempatCtrl;
   late final TextEditingController _mengundangCtrl;
-  late final TextEditingController _delegasiCtrl;
 
   DateTime? _tanggal;
   TimeOfDay? _waktu;
-  String? _selectedBidang;
-  String _statusKegiatan = 'Belum Dilaksanakan';
-  String _menghadiri = 'Pending';
 
-  // Multi-select pihak terkait
+  /// Multi-select: pihak yang diundang
   final Set<String> _selectedPihak = {};
 
   bool get _isEdit => widget.data != null;
@@ -372,27 +437,40 @@ class _UndanganDialogState extends State<_UndanganDialog> {
   void initState() {
     super.initState();
     final d = widget.data;
-    _judulCtrl = TextEditingController(text: d?['judul_kegiatan']?.toString() ?? '');
-    _tempatCtrl = TextEditingController(text: d?['tempat']?.toString() ?? '');
-    _mengundangCtrl = TextEditingController(text: d?['pihak_mengundang']?.toString() ?? '');
-    _delegasiCtrl = TextEditingController(text: d?['delegasi']?.toString() ?? '');
+    _judulCtrl =
+        TextEditingController(text: d?['judul_kegiatan']?.toString() ?? '');
+    _tempatCtrl =
+        TextEditingController(text: d?['tempat']?.toString() ?? '');
+    _mengundangCtrl =
+        TextEditingController(text: d?['pihak_mengundang']?.toString() ?? '');
 
     if (d != null) {
+      // Parse tanggal
       final tgl = d['tanggal']?.toString();
       if (tgl != null) _tanggal = DateTime.tryParse(tgl);
 
-      final wkt = d['waktu']?.toString();
-      if (wkt != null) {
+      // Parse waktu
+      final wkt = d['waktu']?.toString() ?? '';
+      if (wkt.isNotEmpty) {
         final parts = wkt.split(':');
         if (parts.length >= 2) {
-          _waktu = TimeOfDay(hour: int.tryParse(parts[0]) ?? 0, minute: int.tryParse(parts[1]) ?? 0);
+          _waktu = TimeOfDay(
+            hour: int.tryParse(parts[0]) ?? 0,
+            minute: int.tryParse(parts[1]) ?? 0,
+          );
         }
       }
 
-      _selectedBidang = d['bidang_terkait']?.toString();
-      if (_selectedBidang != null && !kBidangUndangan.contains(_selectedBidang)) _selectedBidang = null;
-      _statusKegiatan = d['status_kegiatan']?.toString() ?? 'Belum Dilaksanakan';
-      _menghadiri = d['menghadiri']?.toString() ?? 'Pending';
+      // Parse bidang_terkait → isi _selectedPihak
+      final bidang = d['bidang_terkait']?.toString() ?? '';
+      if (bidang.isNotEmpty) {
+        _selectedPihak.addAll(
+          bidang
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty),
+        );
+      }
     }
   }
 
@@ -401,7 +479,6 @@ class _UndanganDialogState extends State<_UndanganDialog> {
     _judulCtrl.dispose();
     _tempatCtrl.dispose();
     _mengundangCtrl.dispose();
-    _delegasiCtrl.dispose();
     super.dispose();
   }
 
@@ -425,26 +502,37 @@ class _UndanganDialogState extends State<_UndanganDialog> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_tanggal == null) { AppUtils.showError(context, 'Pilih tanggal kegiatan.'); return; }
-    if (_waktu == null) { AppUtils.showError(context, 'Pilih waktu kegiatan.'); return; }
-    if (_selectedBidang == null) { AppUtils.showError(context, 'Pilih bidang terkait.'); return; }
+
+    if (_tanggal == null) {
+      AppUtils.showError(context, 'Pilih tanggal kegiatan.');
+      return;
+    }
+    if (_waktu == null) {
+      AppUtils.showError(context, 'Pilih waktu kegiatan.');
+      return;
+    }
+    if (_selectedPihak.isEmpty) {
+      AppUtils.showError(context, 'Pilih minimal satu pihak yang diundang.');
+      return;
+    }
 
     FocusScope.of(context).unfocus();
 
     final h = _waktu!.hour.toString().padLeft(2, '0');
     final m = _waktu!.minute.toString().padLeft(2, '0');
 
+    // bidang_terkait dikirim sebagai List (array) agar backend bisa parse
+    final bidangList = _selectedPihak.toList();
+
     final ap = context.read<AdminProvider>();
     final data = {
       'judul_kegiatan': _judulCtrl.text.trim(),
-      'tanggal': '${_tanggal!.year}-${_tanggal!.month.toString().padLeft(2,'0')}-${_tanggal!.day.toString().padLeft(2,'0')}',
+      'tanggal':
+          '${_tanggal!.year}-${_tanggal!.month.toString().padLeft(2, '0')}-${_tanggal!.day.toString().padLeft(2, '0')}',
       'waktu': '$h:$m',
       'tempat': _tempatCtrl.text.trim(),
       'pihak_mengundang': _mengundangCtrl.text.trim(),
-      'bidang_terkait': _selectedBidang,
-      'status_kegiatan': _statusKegiatan,
-      'menghadiri': _menghadiri,
-      if (_delegasiCtrl.text.trim().isNotEmpty) 'delegasi': _delegasiCtrl.text.trim(),
+      'bidang_terkait': bidangList,  // array → backend akan join dengan ", "
     };
 
     bool ok;
@@ -457,10 +545,12 @@ class _UndanganDialogState extends State<_UndanganDialog> {
     if (!mounted) return;
     if (ok) {
       Navigator.pop(context);
-      AppUtils.showSuccess(context, ap.successMessage ?? 'Berhasil disimpan');
+      AppUtils.showSuccess(
+          context, ap.successMessage ?? 'Undangan berhasil disimpan.');
       ap.clearMessages();
     } else {
-      AppUtils.showError(context, ap.errorMessage ?? 'Gagal menyimpan');
+      AppUtils.showError(
+          context, ap.errorMessage ?? 'Gagal menyimpan undangan.');
       ap.clearMessages();
     }
   }
@@ -470,29 +560,40 @@ class _UndanganDialogState extends State<_UndanganDialog> {
     final ap = context.watch<AdminProvider>();
 
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      insetPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
+          // ── Header ─────────────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.fromLTRB(20, 18, 16, 16),
             decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
+              border: Border(
+                  bottom: BorderSide(color: AppColors.border, width: 0.5)),
             ),
             child: Row(
               children: [
                 Container(
-                  width: 34, height: 34,
-                  decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(8)),
-                  child: const Icon(Icons.mail_rounded, size: 18, color: AppColors.primary),
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.mail_rounded,
+                      size: 18, color: AppColors.primary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     _isEdit ? 'Edit Undangan' : 'Tambah Surat Undangan',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary),
                   ),
                 ),
                 IconButton(
@@ -504,7 +605,7 @@ class _UndanganDialogState extends State<_UndanganDialog> {
             ),
           ),
 
-          // Form
+          // ── Form ───────────────────────────────────────────────────────
           Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -514,17 +615,20 @@ class _UndanganDialogState extends State<_UndanganDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Judul Kegiatan
-                    _label('Kegiatan'),
+                    _label('Judul / Nama Kegiatan'),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _judulCtrl,
                       maxLines: 3,
-                      decoration: const InputDecoration(hintText: 'Nama / judul kegiatan undangan'),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Wajib diisi' : null,
+                      decoration: const InputDecoration(
+                          hintText: 'Nama / judul kegiatan undangan'),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Wajib diisi'
+                          : null,
                     ),
                     const SizedBox(height: 14),
 
-                    // Tanggal | Waktu | Tempat
+                    // Tanggal & Waktu
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -534,63 +638,23 @@ class _UndanganDialogState extends State<_UndanganDialog> {
                             children: [
                               _label('Tanggal'),
                               const SizedBox(height: 6),
-                              GestureDetector(
+                              _DatePickerField(
+                                date: _tanggal,
                                 onTap: _pickTanggal,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surfaceGray,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: AppColors.border, width: 0.75),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.calendar_today_rounded, size: 16, color: AppColors.textMuted),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        _tanggal != null
-                                            ? '${_tanggal!.day.toString().padLeft(2,'0')}/${_tanggal!.month.toString().padLeft(2,'0')}/${_tanggal!.year}'
-                                            : 'dd/mm/yyyy',
-                                        style: TextStyle(fontSize: 12,
-                                            color: _tanggal != null ? AppColors.textPrimary : AppColors.textHint),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _label('Waktu'),
                               const SizedBox(height: 6),
-                              GestureDetector(
+                              _TimePickerField(
+                                time: _waktu,
                                 onTap: _pickWaktu,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surfaceGray,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: AppColors.border, width: 0.75),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.access_time_rounded, size: 16, color: AppColors.textMuted),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        _waktu != null
-                                            ? '${_waktu!.hour.toString().padLeft(2,'0')}:${_waktu!.minute.toString().padLeft(2,'0')}'
-                                            : '--:--',
-                                        style: TextStyle(fontSize: 12,
-                                            color: _waktu != null ? AppColors.textPrimary : AppColors.textHint),
-                                      ),
-                                    ],
-                                  ),
-                                ),
                               ),
                             ],
                           ),
@@ -599,115 +663,154 @@ class _UndanganDialogState extends State<_UndanganDialog> {
                     ),
                     const SizedBox(height: 14),
 
+                    // Tempat
                     _label('Tempat'),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _tempatCtrl,
-                      decoration: const InputDecoration(hintText: 'Ruang / Lokasi kegiatan'),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Wajib diisi' : null,
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Status Kegiatan
-                    _label('Status Kegiatan'),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      value: _statusKegiatan,
-                      decoration: const InputDecoration(),
-                      items: const [
-                        DropdownMenuItem(value: 'Belum Dilaksanakan', child: Text('Belum Terlaksana', style: TextStyle(fontSize: 13))),
-                        DropdownMenuItem(value: 'Sudah Dilaksanakan', child: Text('Sudah Dilaksanakan', style: TextStyle(fontSize: 13))),
-                      ],
-                      onChanged: (v) => setState(() => _statusKegiatan = v ?? _statusKegiatan),
-                    ),
-                    const SizedBox(height: 14),
-
-                    // Menghadiri
-                    _label('Kehadiran'),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      value: _menghadiri,
-                      decoration: const InputDecoration(),
-                      items: const [
-                        DropdownMenuItem(value: 'Pending', child: Text('Pending', style: TextStyle(fontSize: 13))),
-                        DropdownMenuItem(value: 'Hadir', child: Text('Hadir', style: TextStyle(fontSize: 13))),
-                        DropdownMenuItem(value: 'Tidak Hadir', child: Text('Tidak Hadir', style: TextStyle(fontSize: 13))),
-                        DropdownMenuItem(value: 'Delegasi', child: Text('Delegasi', style: TextStyle(fontSize: 13))),
-                      ],
-                      onChanged: (v) => setState(() => _menghadiri = v ?? _menghadiri),
+                      decoration: const InputDecoration(
+                          hintText: 'Ruang / lokasi kegiatan'),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Wajib diisi'
+                          : null,
                     ),
                     const SizedBox(height: 14),
 
                     // Pihak Mengundang
-                    _label('Pihak Yang Mengundang'),
+                    _label('Pihak yang Mengundang'),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _mengundangCtrl,
-                      decoration: const InputDecoration(hintText: 'Instansi / pihak pengundang'),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Wajib diisi' : null,
+                      decoration: const InputDecoration(
+                          hintText: 'Instansi / pihak pengundang'),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Wajib diisi'
+                          : null,
                     ),
                     const SizedBox(height: 14),
 
-                    // Bidang Terkait
-                    _label('Bidang Terkait'),
-                    const SizedBox(height: 6),
-                    DropdownButtonFormField<String>(
-                      value: _selectedBidang,
-                      decoration: const InputDecoration(hintText: '-- Pilih Bidang --'),
-                      items: kBidangUndangan
-                          .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 13))))
-                          .toList(),
-                      onChanged: (v) => setState(() => _selectedBidang = v),
-                      validator: (v) => v == null ? 'Pilih bidang' : null,
+                    // Pihak yang Diundang (multi-select checkbox)
+                    _label('Pihak yang Diundang'),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Pilih satu atau lebih pihak yang akan menerima undangan',
+                      style: TextStyle(
+                          fontSize: 11, color: AppColors.textHint),
                     ),
-                    const SizedBox(height: 14),
-
-                    // Pihak yang Terkait / Diundang (multi-select checkboxes)
-                    _label('Pihak Yang Terkait/diundang'),
                     const SizedBox(height: 8),
+
+                    // Tampilkan badge pihak terpilih
+                    if (_selectedPihak.isNotEmpty) ...[
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: _selectedPihak
+                            .map((p) => Chip(
+                                  label: Text(p,
+                                      style: const TextStyle(fontSize: 11)),
+                                  deleteIcon: const Icon(
+                                      Icons.close_rounded,
+                                      size: 14),
+                                  onDeleted: () =>
+                                      setState(() => _selectedPihak.remove(p)),
+                                  backgroundColor: AppColors.primaryLight,
+                                  labelStyle: const TextStyle(
+                                      color: AppColors.primaryDark,
+                                      fontSize: 11),
+                                  side: const BorderSide(
+                                      color: Color(0xFFBFDBFE), width: 0.5),
+                                  padding: EdgeInsets.zero,
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ))
+                            .toList(),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+
+                    // Daftar checkbox pihak
                     Container(
                       decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.border, width: 0.75),
+                        border: Border.all(
+                            color: AppColors.border, width: 0.75),
                         borderRadius: BorderRadius.circular(10),
                         color: AppColors.surfaceGray,
                       ),
                       child: Column(
-                        children: List.generate(kPihakTerkaitList.length, (i) {
-                          final item = kPihakTerkaitList[i];
-                          final isLast = i == kPihakTerkaitList.length - 1;
-                          return Column(
-                            children: [
-                              CheckboxListTile(
-                                value: _selectedPihak.contains(item),
-                                onChanged: (v) {
-                                  setState(() {
-                                    if (v == true) {
-                                      _selectedPihak.add(item);
-                                    } else {
-                                      _selectedPihak.remove(item);
-                                    }
-                                  });
-                                },
-                                title: Text(item, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                                dense: true,
-                                controlAffinity: ListTileControlAffinity.leading,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-                                activeColor: AppColors.primary,
-                              ),
-                              if (!isLast) const Divider(height: 0, indent: 8, endIndent: 8),
-                            ],
-                          );
-                        }),
+                        children: List.generate(
+                          kPihakTerkaitList.length,
+                          (i) {
+                            final item = kPihakTerkaitList[i];
+                            final isLast =
+                                i == kPihakTerkaitList.length - 1;
+                            final isChecked =
+                                _selectedPihak.contains(item);
+                            return Column(
+                              children: [
+                                CheckboxListTile(
+                                  value: isChecked,
+                                  onChanged: (v) {
+                                    setState(() {
+                                      if (v == true) {
+                                        _selectedPihak.add(item);
+                                      } else {
+                                        _selectedPihak.remove(item);
+                                      }
+                                    });
+                                  },
+                                  title: Text(item,
+                                      style: const TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.textSecondary)),
+                                  dense: true,
+                                  controlAffinity:
+                                      ListTileControlAffinity.leading,
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                  activeColor: AppColors.primary,
+                                  checkboxShape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                                if (!isLast)
+                                  const Divider(
+                                      height: 0,
+                                      indent: 8,
+                                      endIndent: 8),
+                              ],
+                            );
+                          },
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 8),
 
-                    // Delegasi (opsional)
-                    _label('Delegasi (opsional)'),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _delegasiCtrl,
-                      decoration: const InputDecoration(hintText: 'Nama delegasi jika ada'),
+                    // Info: field lain diisi oleh user
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFFBEB),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: const Color(0xFFFDE68A), width: 0.75),
+                      ),
+                      child: const Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline_rounded,
+                              size: 14, color: AppColors.warning),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Konfirmasi kehadiran (hadir/tidak hadir), bukti, dan delegasi diisi oleh masing-masing pihak yang diundang.',
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF92400E)),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 8),
                   ],
@@ -716,17 +819,19 @@ class _UndanganDialogState extends State<_UndanganDialog> {
             ),
           ),
 
-          // Footer
+          // ── Footer ─────────────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
             decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: AppColors.border, width: 0.5)),
+              border: Border(
+                  top: BorderSide(color: AppColors.border, width: 0.5)),
             ),
             child: Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: ap.isSaving ? null : () => Navigator.pop(context),
+                    onPressed:
+                        ap.isSaving ? null : () => Navigator.pop(context),
                     child: const Text('Batal'),
                   ),
                 ),
@@ -736,10 +841,16 @@ class _UndanganDialogState extends State<_UndanganDialog> {
                   child: ElevatedButton.icon(
                     onPressed: ap.isSaving ? null : _submit,
                     icon: ap.isSaving
-                        ? const SizedBox(width: 16, height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
                         : const Icon(Icons.save_rounded, size: 16),
-                    label: Text(ap.isSaving ? 'Menyimpan...' : 'Simpan'),
+                    label: Text(ap.isSaving
+                        ? 'Menyimpan...'
+                        : (_isEdit ? 'Simpan Perubahan' : 'Simpan')),
                   ),
                 ),
               ],
@@ -750,6 +861,102 @@ class _UndanganDialogState extends State<_UndanganDialog> {
     );
   }
 
-  Widget _label(String text) => Text(text,
-    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textSecondary));
+  Widget _label(String text) => Text(
+        text,
+        style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textSecondary),
+      );
+}
+
+// ─── Date & Time Picker Field Widgets ────────────────────────────────────────
+
+class _DatePickerField extends StatelessWidget {
+  final DateTime? date;
+  final VoidCallback onTap;
+  const _DatePickerField({required this.date, required this.onTap});
+
+  String get _label {
+    if (date == null) return 'dd/mm/yyyy';
+    return '${date!.day.toString().padLeft(2, '0')}/'
+        '${date!.month.toString().padLeft(2, '0')}/'
+        '${date!.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceGray,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border, width: 0.75),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_today_rounded,
+                size: 16, color: AppColors.textMuted),
+            const SizedBox(width: 6),
+            Text(
+              _label,
+              style: TextStyle(
+                fontSize: 12,
+                color: date != null
+                    ? AppColors.textPrimary
+                    : AppColors.textHint,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TimePickerField extends StatelessWidget {
+  final TimeOfDay? time;
+  final VoidCallback onTap;
+  const _TimePickerField({required this.time, required this.onTap});
+
+  String get _label {
+    if (time == null) return '--:--';
+    return '${time!.hour.toString().padLeft(2, '0')}:'
+        '${time!.minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceGray,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.border, width: 0.75),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.access_time_rounded,
+                size: 16, color: AppColors.textMuted),
+            const SizedBox(width: 6),
+            Text(
+              _label,
+              style: TextStyle(
+                fontSize: 12,
+                color: time != null
+                    ? AppColors.textPrimary
+                    : AppColors.textHint,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

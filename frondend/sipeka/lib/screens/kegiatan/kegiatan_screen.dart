@@ -147,6 +147,7 @@ class _KegiatanScreenState extends State<KegiatanScreen> {
                     ),
                   ),
           ),
+          const SizedBox(height: 40),
         ],
       ),
     );

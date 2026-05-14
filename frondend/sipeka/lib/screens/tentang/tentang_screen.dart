@@ -122,7 +122,7 @@ class TentangScreen extends StatelessWidget {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Fullstack Developer"),
+                        Text("Software Developer"),
                         SizedBox(height: 4),
                         Text("Email: ahmadhusin.2340304028@gmail.com"),
                         Text("WA: 0852-5687-5779"),
@@ -139,7 +139,7 @@ class TentangScreen extends StatelessWidget {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Fullstack Developer"),
+                        Text("Software Developer"),
                         SizedBox(height: 4),
                         Text("Email: rangga@email.com"),
                         Text("WA: 0812-3456-7891"),
@@ -156,7 +156,7 @@ class TentangScreen extends StatelessWidget {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Fullstack Developer"),
+                        Text("Software Developer"),
                         SizedBox(height: 4),
                         Text("Email: adi@email.com"),
                         Text("WA: 0812-3456-7892"),

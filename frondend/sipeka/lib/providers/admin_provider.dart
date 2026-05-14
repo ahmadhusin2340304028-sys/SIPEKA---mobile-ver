@@ -18,6 +18,9 @@ class AdminProvider extends ChangeNotifier {
   int _lastPage = 1;
   int _total = 0;
 
+  // ✅ Server-side search query
+  String _searchQuery = '';
+
   // Undangan list for admin
   List<Map<String, dynamic>> _undanganList = [];
 
@@ -27,6 +30,7 @@ class AdminProvider extends ChangeNotifier {
   String? get successMessage => _successMessage;
   List<KegiatanModel> get kegiatanList => _kegiatanList;
   List<Map<String, dynamic>> get undanganList => _undanganList;
+  String get searchQuery => _searchQuery;
   int get total => _total;
   bool get hasMore => _currentPage < _lastPage;
 
@@ -37,6 +41,7 @@ class AdminProvider extends ChangeNotifier {
       _isLoading = true;
       _kegiatanList = [];
       _currentPage = 1;
+      _lastPage = 1;
     }
     _errorMessage = null;
     notifyListeners();
@@ -47,7 +52,12 @@ class AdminProvider extends ChangeNotifier {
 
       final response = await Dio().get(
         '${DioProvider.baseApiUrl}/kegiatan',
-        queryParameters: {'page': page, 'per_page': 20},
+        queryParameters: {
+          'page': page,
+          'per_page': 20,
+          // ✅ Kirim search ke server jika ada
+          if (_searchQuery.isNotEmpty) 'search': _searchQuery,
+        },
         options: Options(headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -67,9 +77,9 @@ class AdminProvider extends ChangeNotifier {
           _kegiatanList.addAll(list.where((k) => !ids.contains(k.id)));
         }
 
-        _currentPage = body['current_page'] ?? page;
-        _lastPage = body['last_page'] ?? 1;
-        _total = body['total'] ?? _kegiatanList.length;
+        _currentPage = _asInt(body['current_page'], page);
+        _lastPage    = _asInt(body['last_page'], 1);
+        _total       = _asInt(body['total'], _kegiatanList.length);
       }
     } catch (e) {
       _errorMessage = 'Gagal memuat data kegiatan';
@@ -82,6 +92,20 @@ class AdminProvider extends ChangeNotifier {
   Future<void> loadMoreKegiatan() async {
     if (_isLoading || !hasMore) return;
     await loadKegiatan(page: _currentPage + 1, reset: false);
+  }
+
+  /// ✅ Set search → reload dari halaman 1 (server-side)
+  Future<void> setSearch(String query) async {
+    if (_searchQuery == query.trim()) return;
+    _searchQuery = query.trim();
+    await loadKegiatan();
+  }
+
+  /// ✅ Hapus search → reload semua data
+  Future<void> clearSearch() async {
+    if (_searchQuery.isEmpty) return;
+    _searchQuery = '';
+    await loadKegiatan();
   }
 
   Future<bool> tambahKegiatan(Map<String, dynamic> data) async {
@@ -241,9 +265,11 @@ class AdminProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
 
+      final payload = _normalizeUndanganPayload(data);
+
       final response = await Dio().post(
         '${DioProvider.baseApiUrl}/undangan',
-        data: data,
+        data: payload,
         options: Options(headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -258,6 +284,8 @@ class AdminProvider extends ChangeNotifier {
         notifyListeners();
         return true;
       }
+
+      _errorMessage = _parseResponseError(response.data);
     } on DioException catch (e) {
       _errorMessage = _parseError(e);
     } catch (e) {
@@ -279,9 +307,11 @@ class AdminProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
 
+      final payload = _normalizeUndanganPayload(data);
+
       final response = await Dio().put(
         '${DioProvider.baseApiUrl}/undangan/$id',
-        data: data,
+        data: payload,
         options: Options(headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -296,6 +326,8 @@ class AdminProvider extends ChangeNotifier {
         notifyListeners();
         return true;
       }
+
+      _errorMessage = _parseResponseError(response.data);
     } on DioException catch (e) {
       _errorMessage = _parseError(e);
     } catch (e) {
@@ -344,16 +376,62 @@ class AdminProvider extends ChangeNotifier {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
+  Map<String, dynamic> _normalizeUndanganPayload(Map<String, dynamic> data) {
+    const adminFields = {
+      'judul_kegiatan',
+      'tanggal',
+      'waktu',
+      'tempat',
+      'pihak_mengundang',
+      'bidang_terkait',
+    };
+
+    final payload = Map<String, dynamic>.fromEntries(
+      data.entries.where((e) => adminFields.contains(e.key)),
+    );
+
+    if (payload.containsKey('bidang_terkait')) {
+      final raw = payload['bidang_terkait'];
+      if (raw is List) {
+        payload['bidang_terkait'] = raw
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      } else if (raw is String) {
+        payload['bidang_terkait'] = raw
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      }
+    }
+
+    return payload;
+  }
+
+  int _asInt(dynamic value, int fallback) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
   String _parseError(DioException e) {
     final data = e.response?.data;
-    if (data is Map && data['message'] != null) return data['message'];
-    if (data is Map && data['errors'] != null) {
-      final errors = data['errors'] as Map;
-      return errors.values.first is List
-          ? (errors.values.first as List).first.toString()
-          : errors.values.first.toString();
+    return _parseResponseError(data) ??
+        'Server error: ${e.response?.statusCode}';
+  }
+
+  String? _parseResponseError(dynamic data) {
+    if (data == null) return null;
+    if (data is Map) {
+      if (data['message'] != null) return data['message'].toString();
+      if (data['errors'] != null) {
+        final errors = data['errors'] as Map;
+        final first = errors.values.first;
+        return first is List ? first.first.toString() : first.toString();
+      }
     }
-    return 'Server error: ${e.response?.statusCode}';
+    return null;
   }
 
   void clearMessages() {

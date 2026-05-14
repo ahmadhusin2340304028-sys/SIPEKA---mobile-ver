@@ -45,12 +45,11 @@ class KegiatanController extends Controller
         //     $query->where('bidang', $request->bidang);
         // }
 
-        // ── Bidang Filter ────────────────────────────────────────────────────
+        // ── Search ──────────────────────────────────────────────────────────
         if ($request->filled('bidang')) {
             $query->where('bidang', $request->bidang);
         }
 
-        // ── Search ──────────────────────────────────────────────────────────
         if ($request->filled('search')) {
             $q = $request->search;
             $query->where(function ($q2) use ($q) {

@@ -128,6 +128,7 @@ class _UndanganScreenState extends State<UndanganScreen> {
                             ),
                           ),
           ),
+          const SizedBox(height: 40)
         ],
       ),
     );
@@ -765,13 +766,13 @@ class _InfoHadir extends StatelessWidget {
             const SizedBox(height: 6),
             GestureDetector(
               onTap: () => _openBukti(context, undangan.buktiUrl!),
-              child: Row(
+              child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.attach_file_rounded,
+                  Icon(Icons.attach_file_rounded,
                       size: 13, color: AppColors.success),
-                  const SizedBox(width: 5),
-                  const Text(
+                  SizedBox(width: 5),
+                  Text(
                     'lihat bukti',
                     style: TextStyle(
                       fontSize: 12,
@@ -836,12 +837,12 @@ class _PihakTerkaitRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.groups_rounded, size: 13, color: AppColors.textMuted),
-            const SizedBox(width: 6),
-            const Text(
+            Icon(Icons.groups_rounded, size: 13, color: AppColors.textMuted),
+            SizedBox(width: 6),
+            Text(
               'Pihak yang diundang:',
               style: TextStyle(fontSize: 12, color: AppColors.textMuted),
             ),
