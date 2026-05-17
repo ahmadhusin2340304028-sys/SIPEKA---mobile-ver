@@ -80,16 +80,36 @@ class UndanganController extends Controller
         $baseQuery = Undangan::query();
 
         if ($request->filled('status')) {
-            $baseQuery->where('menghadiri', $request->status);
+            $status = strtolower(trim((string) $request->status));
+
+            if ($status === 'pending') {
+                $baseQuery->where('status_kegiatan', Undangan::HADIR_PENDING);
+            } elseif (in_array($status, ['tidak_hadir', 'tidak hadir'], true)) {
+                $baseQuery->where('menghadiri', Undangan::HADIR_TIDAK);
+            } elseif ($status === 'hadir') {
+                $baseQuery
+                    ->whereNotNull('menghadiri')
+                    ->whereNotIn('menghadiri', ['', Undangan::HADIR_PENDING, Undangan::HADIR_TIDAK]);
+            }
         }
 
         $totalPending = (clone $baseQuery)
             ->where('status_kegiatan', 'Pending')
             ->count();
 
-        $undangan = (clone $baseQuery)
-            ->orderByDesc('tanggal')
-            ->paginate($request->get('per_page', 20));
+        $query = clone $baseQuery;
+
+        if ($request->get('sort') === 'nearest') {
+            $today = now()->toDateString();
+            $query
+                ->orderByRaw('CASE WHEN tanggal >= ? THEN 0 ELSE 1 END', [$today])
+                ->orderBy('tanggal')
+                ->orderBy('waktu');
+        } else {
+            $query->orderByDesc('tanggal');
+        }
+
+        $undangan = $query->paginate($request->get('per_page', 20));
 
         $undangan->getCollection()->transform(function ($item) use ($user) {
             $item->bukti_url   = $item->bukti_url;

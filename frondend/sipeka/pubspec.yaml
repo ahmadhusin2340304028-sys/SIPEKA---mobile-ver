@@ -21,6 +21,9 @@ dependencies:
   lottie: ^3.3.3
   url_launcher: ^6.2.5 
 
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -31,7 +34,7 @@ flutter:
   assets:
     - assets/images/
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/images/dinsos_logo.png"

@@ -13,6 +13,8 @@ class UndanganProvider extends ChangeNotifier {
   String? _lastMessage;
   String? _errorMessage;
   int _totalPending = 0;
+  UndanganModel? _nearestPendingUndangan;
+  bool _isLoadingNearestPending = false;
 
   // Pagination state
   int _currentPage = 0;
@@ -24,11 +26,13 @@ class UndanganProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isLoadingMore => _isLoadingMore;
   bool get isUpdating => _isUpdating;
+  bool get isLoadingNearestPending => _isLoadingNearestPending;
   bool get hasMore => _currentPage < _lastPage;
   StatusUndangan? get filterStatus => _filterStatus;
   String? get lastMessage => _lastMessage;
   String? get errorMessage => _errorMessage;
   int get pendingCount => _totalPending;
+  UndanganModel? get nearestPendingUndangan => _nearestPendingUndangan;
 
   // Filter dilakukan client-side dari data yang sudah di-load
   List<UndanganModel> get filteredUndangan {
@@ -52,6 +56,33 @@ class UndanganProvider extends ChangeNotifier {
     await _fetchPage(page: 1, reset: true);
 
     _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> loadNearestPendingUndangan() async {
+    if (_isLoadingNearestPending) return;
+
+    _isLoadingNearestPending = true;
+    notifyListeners();
+
+    try {
+      final result = await DioProvider().getUndangan(
+        page: 1,
+        perPage: 1,
+        status: 'pending',
+        sort: 'nearest',
+      );
+
+      if (result != null) {
+        final items = result['items'] as List<UndanganModel>;
+        _nearestPendingUndangan = items.isEmpty ? null : items.first;
+        _totalPending = result['total_pending'] as int? ?? _totalPending;
+      }
+    } catch (_) {
+      _nearestPendingUndangan = null;
+    }
+
+    _isLoadingNearestPending = false;
     notifyListeners();
   }
 
@@ -145,7 +176,12 @@ class UndanganProvider extends ChangeNotifier {
             );
           }
         }
-        _lastMessage = result['message'] as String? ?? 'Kehadiran berhasil dikonfirmasi.';
+        if (_nearestPendingUndangan?.id == id) {
+          _nearestPendingUndangan = null;
+        }
+        if (_totalPending > 0) _totalPending--;
+        _lastMessage =
+            result['message'] as String? ?? 'Kehadiran berhasil dikonfirmasi.';
         _isUpdating = false;
         notifyListeners();
         return true;
@@ -180,7 +216,12 @@ class UndanganProvider extends ChangeNotifier {
             status: StatusUndangan.tidakHadir,
           );
         }
-        _lastMessage = result['message'] as String? ?? 'Undangan ditandai tidak hadir.';
+        if (_nearestPendingUndangan?.id == id) {
+          _nearestPendingUndangan = null;
+        }
+        if (_totalPending > 0) _totalPending--;
+        _lastMessage =
+            result['message'] as String? ?? 'Undangan ditandai tidak hadir.';
         _isUpdating = false;
         notifyListeners();
         return true;

@@ -393,6 +393,8 @@ class DioProvider {
   Future<Map<String, dynamic>?> getUndangan({
     int page = 1,
     int perPage = 20,
+    String? status,
+    String? sort,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -403,6 +405,8 @@ class DioProvider {
         queryParameters: {
           'page': page,
           'per_page': perPage,
+          if (status != null && status.isNotEmpty) 'status': status,
+          if (sort != null && sort.isNotEmpty) 'sort': sort,
         },
         options: Options(
           headers: {
