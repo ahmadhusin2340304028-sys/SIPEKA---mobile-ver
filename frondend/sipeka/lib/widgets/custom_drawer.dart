@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../core/constants/app_constants.dart';
 import '../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 import '../providers/undangan_provider.dart';
 
 class CustomDrawer extends StatelessWidget {
@@ -16,11 +17,12 @@ class CustomDrawer extends StatelessWidget {
     final undangan = context.watch<UndanganProvider>();
     final user = auth.user;
 
-    final route =
-        ModalRoute.of(context)?.settings.name ?? AppRoutes.dashboard;
+    final route = ModalRoute.of(context)?.settings.name ?? AppRoutes.dashboard;
 
     // ✅ Admin checker
     final isAdmin = user?.role == 'Admin';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dividerColor = isDark ? const Color(0xFF334155) : AppColors.border;
 
     return Drawer(
       child: SafeArea(
@@ -107,10 +109,7 @@ class CustomDrawer extends StatelessWidget {
                           const SizedBox(width: 8),
 
                           Expanded(
-                            child: Container(
-                              height: 0.5,
-                              color: AppColors.border,
-                            ),
+                            child: Container(height: 0.5, color: dividerColor),
                           ),
                         ],
                       ),
@@ -137,6 +136,8 @@ class CustomDrawer extends StatelessWidget {
             ),
 
             // ── Bottom ──────────────────────────────────────────────────────
+            const _ThemeToggleTile(),
+
             const Divider(),
 
             _DrawerItem(
@@ -146,9 +147,7 @@ class CustomDrawer extends StatelessWidget {
               currentRoute: route,
             ),
 
-            _LogoutButton(
-              onLogout: () => _doLogout(context, auth),
-            ),
+            _LogoutButton(onLogout: () => _doLogout(context, auth)),
 
             const SizedBox(height: 8),
           ],
@@ -157,10 +156,7 @@ class CustomDrawer extends StatelessWidget {
     );
   }
 
-  Future<void> _doLogout(
-    BuildContext context,
-    AuthProvider auth,
-  ) async {
+  Future<void> _doLogout(BuildContext context, AuthProvider auth) async {
     final navigator = Navigator.of(context, rootNavigator: true);
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
@@ -180,9 +176,7 @@ class CustomDrawer extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.danger,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             child: const Text('Keluar'),
           ),
         ],
@@ -194,11 +188,8 @@ class CustomDrawer extends StatelessWidget {
     showDialog(
       context: navigator.context,
       barrierDismissible: false,
-      builder: (_) => const Center(
-        child: CircularProgressIndicator(
-          color: Colors.white,
-        ),
-      ),
+      builder: (_) =>
+          const Center(child: CircularProgressIndicator(color: Colors.white)),
     );
 
     try {
@@ -206,23 +197,70 @@ class CustomDrawer extends StatelessWidget {
 
       navigator.pop();
 
-      navigator.pushNamedAndRemoveUntil(
-        AppRoutes.login,
-        (_) => false,
-      );
+      navigator.pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
     } catch (e) {
       navigator.pop();
 
       scaffoldMessenger.showSnackBar(
-        const SnackBar(
-          content: Text('Gagal logout, coba lagi'),
-        ),
+        const SnackBar(content: Text('Gagal logout, coba lagi')),
       );
     }
   }
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────
+
+class _ThemeToggleTile extends StatelessWidget {
+  const _ThemeToggleTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.primaryMid.withOpacity(0.14)
+            : AppColors.primaryLight,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark
+              ? AppColors.primaryMid.withOpacity(0.28)
+              : const Color(0xFFBFDBFE),
+          width: 0.5,
+        ),
+      ),
+      child: SwitchListTile.adaptive(
+        dense: true,
+        value: isDark,
+        onChanged: themeProvider.setDarkMode,
+        contentPadding: const EdgeInsets.only(left: 12, right: 8),
+        secondary: Icon(
+          isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+          size: 20,
+          color: isDark ? const Color(0xFF93C5FD) : AppColors.primary,
+        ),
+        title: Text(
+          isDark ? 'Mode Gelap' : 'Mode Terang',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isDark ? const Color(0xFFE5E7EB) : AppColors.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          isDark ? 'Tema gelap aktif' : 'Tema terang aktif',
+          style: TextStyle(
+            fontSize: 10,
+            color: isDark ? const Color(0xFF94A3B8) : AppColors.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _DrawerHeader extends StatelessWidget {
   final String name;
@@ -239,15 +277,17 @@ class _DrawerHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = isDark ? const Color(0xFF334155) : AppColors.border;
+    final primaryText = isDark
+        ? const Color(0xFFE5E7EB)
+        : AppColors.textPrimary;
+    final mutedText = isDark ? const Color(0xFF94A3B8) : AppColors.textMuted;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: AppColors.border,
-            width: 0.5,
-          ),
-        ),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: borderColor, width: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,13 +299,11 @@ class _DrawerHeader extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Image(
-                  image: AssetImage(
-                    'assets/images/dinsos_logo.png',
-                  ),
+                  image: AssetImage('assets/images/dinsos_logo.png'),
                   width: 22,
                   height: 22,
                 ),
@@ -273,7 +311,7 @@ class _DrawerHeader extends StatelessWidget {
 
               const SizedBox(width: 10),
 
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -281,16 +319,15 @@ class _DrawerHeader extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.primary,
+                      color: isDark
+                          ? const Color(0xFF93C5FD)
+                          : AppColors.primary,
                       letterSpacing: 0.5,
                     ),
                   ),
                   Text(
                     'Kinerja & Anggaran',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppColors.textMuted,
-                    ),
+                    style: TextStyle(fontSize: 10, color: mutedText),
                   ),
                 ],
               ),
@@ -332,10 +369,7 @@ class _DrawerHeader extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: AppColors.warning,
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 1.5,
-                          ),
+                          border: Border.all(color: Colors.white, width: 1.5),
                         ),
                         child: const Icon(
                           Icons.shield_rounded,
@@ -355,20 +389,17 @@ class _DrawerHeader extends StatelessWidget {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
+                        color: primaryText,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
 
                     Text(
                       jabatan,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textMuted,
-                      ),
+                      style: TextStyle(fontSize: 11, color: mutedText),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -407,46 +438,48 @@ class _DrawerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark && _accent == AppColors.primary
+        ? const Color(0xFF93C5FD)
+        : _accent;
+    final inactiveColor = isDark
+        ? const Color(0xFF94A3B8)
+        : AppColors.textMuted;
+    final inactiveTextColor = isDark
+        ? const Color(0xFFCBD5E1)
+        : AppColors.textSecondary;
+    final activeBackground = isDark
+        ? activeColor.withOpacity(0.16)
+        : (_accent == AppColors.warning
+              ? const Color(0xFFFFFBEB)
+              : AppColors.primaryLight);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
       decoration: BoxDecoration(
-        color: _active
-            ? (_accent == AppColors.warning
-                ? const Color(0xFFFFFBEB)
-                : AppColors.primaryLight)
-            : Colors.transparent,
+        color: _active ? activeBackground : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
         dense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 0,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         leading: Icon(
           icon,
           size: 20,
-          color: _active ? _accent : AppColors.textMuted,
+          color: _active ? activeColor : inactiveColor,
         ),
         title: Text(
           label,
           style: TextStyle(
             fontSize: 13,
-            fontWeight:
-                _active ? FontWeight.w500 : FontWeight.w400,
-            color:
-                _active ? _accent : AppColors.textSecondary,
+            fontWeight: _active ? FontWeight.w500 : FontWeight.w400,
+            color: _active ? activeColor : inactiveTextColor,
           ),
         ),
         trailing: badge != null
             ? Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 7,
-                  vertical: 2,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.danger,
                   borderRadius: BorderRadius.circular(10),
@@ -461,23 +494,20 @@ class _DrawerItem extends StatelessWidget {
                 ),
               )
             : _active
-                ? Container(
-                    width: 3,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      color: _accent,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  )
-                : null,
+            ? Container(
+                width: 3,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: activeColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              )
+            : null,
         onTap: () {
           Navigator.pop(context);
 
           if (!_active) {
-            Navigator.pushReplacementNamed(
-              context,
-              route,
-            );
+            Navigator.pushReplacementNamed(context, route);
           }
         },
       ),
@@ -490,9 +520,7 @@ class _DrawerItem extends StatelessWidget {
 class _LogoutButton extends StatelessWidget {
   final VoidCallback onLogout;
 
-  const _LogoutButton({
-    required this.onLogout,
-  });
+  const _LogoutButton({required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
@@ -500,11 +528,8 @@ class _LogoutButton extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 8),
       child: ListTile(
         dense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         leading: const Icon(
           Icons.logout_rounded,
           size: 20,

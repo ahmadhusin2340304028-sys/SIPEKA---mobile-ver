@@ -61,13 +61,15 @@ class _UndanganScreenState extends State<UndanganScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.22),
+                    color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.22),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${up.pendingCount} pending',
-                    style: const TextStyle(
-                        fontSize: 11, color: Colors.white, fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontWeight: FontWeight.w500),
                   ),
                 ),
               ),
@@ -199,9 +201,9 @@ class _UndanganScreenState extends State<UndanganScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceGray,
+                      color: AppTheme.surfaceGrayOf(context),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.border, width: 0.5),
+                      border: Border.all(color: AppTheme.borderOf(context), width: 0.5),
                     ),
                     child: Text(
                       undangan.judul,
@@ -233,16 +235,17 @@ class _UndanganScreenState extends State<UndanganScreen> {
                           width: 20,
                           height: 20,
                           decoration: BoxDecoration(
-                            color: isDelegasi ? AppColors.primary : Colors.white,
+                            color: isDelegasi ? AppColors.primary : AppTheme.surfaceOf(context),
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
-                              color: isDelegasi ? AppColors.primary : AppColors.border,
+                              color: isDelegasi ? AppColors.primary : AppTheme.borderOf(context),
                               width: 1.5,
                             ),
                           ),
                           child: isDelegasi
-                              ? const Icon(Icons.check_rounded,
-                                  size: 13, color: Colors.white)
+                              ? Icon(Icons.check_rounded,
+                                  size: 13,
+                                  color: Theme.of(context).colorScheme.onPrimary)
                               : null,
                         ),
                         const SizedBox(width: 10),
@@ -495,7 +498,7 @@ class _FilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      color: AppTheme.surfaceOf(context),
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -556,10 +559,10 @@ class _Chip extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          color: isSelected ? activeColor : AppColors.surfaceGray,
+          color: isSelected ? activeColor : AppTheme.surfaceGrayOf(context),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? activeColor : AppColors.border,
+            color: isSelected ? activeColor : AppTheme.borderOf(context),
             width: 0.5,
           ),
         ),
@@ -568,7 +571,7 @@ class _Chip extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : AppColors.textSecondary,
+            color: isSelected ? Theme.of(context).colorScheme.onPrimary : AppTheme.textSecondaryOf(context),
           ),
         ),
       ),
@@ -598,9 +601,9 @@ class _UndanganCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceOf(context),
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: AppTheme.borderOf(context), width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

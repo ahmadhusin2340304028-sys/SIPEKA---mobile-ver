@@ -12,6 +12,7 @@ import 'providers/kegiatan_provider.dart';
 import 'providers/undangan_provider.dart';
 import 'providers/realisasi_provider.dart';
 import 'providers/admin_provider.dart';
+import 'providers/theme_provider.dart';
 
 import 'screens/auth/login_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
@@ -60,43 +61,59 @@ class SipekaApp extends StatelessWidget {
 
         // ✅ Admin Provider
         ChangeNotifierProvider(create: (_) => AdminProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
 
-      child: MaterialApp(
-        title: AppStrings.appName,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          final isDark = themeProvider.isDarkMode;
 
-        // Start at splash
-        home: const _SplashGate(),
+          return AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+              systemNavigationBarColor: isDark
+                  ? const Color(0xFF0F172A)
+                  : AppColors.background,
+              systemNavigationBarIconBrightness: isDark
+                  ? Brightness.light
+                  : Brightness.dark,
+            ),
+            child: MaterialApp(
+              title: AppStrings.appName,
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.light,
+              darkTheme: AppTheme.dark,
+              themeMode: themeProvider.themeMode,
+              themeAnimationDuration: const Duration(milliseconds: 220),
 
-        routes: {
-          AppRoutes.login: (_) => const LoginScreen(),
+              // Start at splash
+              home: const _SplashGate(),
 
-          AppRoutes.dashboard: (_) => const DashboardScreen(),
+              routes: {
+                AppRoutes.login: (_) => const LoginScreen(),
 
-          AppRoutes.kegiatan: (_) => const KegiatanScreen(),
+                AppRoutes.dashboard: (_) => const DashboardScreen(),
 
-          AppRoutes.detailKegiatan: (_) =>
-              const DetailKegiatanScreen(),
+                AppRoutes.kegiatan: (_) => const KegiatanScreen(),
 
-          AppRoutes.inputRealisasi: (_) =>
-              const InputRealisasiScreen(),
+                AppRoutes.detailKegiatan: (_) => const DetailKegiatanScreen(),
 
-          AppRoutes.undangan: (_) => const UndanganScreen(),
+                AppRoutes.inputRealisasi: (_) => const InputRealisasiScreen(),
 
-          AppRoutes.tentang: (_) => const TentangScreen(),
+                AppRoutes.undangan: (_) => const UndanganScreen(),
 
-          // ✅ ADMIN ROUTES
-          AppRoutes.adminKegiatan: (_) =>
-              const _AdminGuard(
-                child: AdminKegiatanScreen(),
-              ),
+                AppRoutes.tentang: (_) => const TentangScreen(),
 
-          AppRoutes.adminUndangan: (_) =>
-              const _AdminGuard(
-                child: AdminUndanganScreen(),
-              ),
+                // ✅ ADMIN ROUTES
+                AppRoutes.adminKegiatan: (_) =>
+                    const _AdminGuard(child: AdminKegiatanScreen()),
+
+                AppRoutes.adminUndangan: (_) =>
+                    const _AdminGuard(child: AdminUndanganScreen()),
+              },
+            ),
+          );
         },
       ),
     );
@@ -110,9 +127,7 @@ class SipekaApp extends StatelessWidget {
 class _AdminGuard extends StatelessWidget {
   final Widget child;
 
-  const _AdminGuard({
-    required this.child,
-  });
+  const _AdminGuard({required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -121,26 +136,16 @@ class _AdminGuard extends StatelessWidget {
     // Belum login
     if (user == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(
-          context,
-          AppRoutes.login,
-        );
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
       });
 
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     // Bukan admin
     if (user.role != 'Admin') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(
-          context,
-          AppRoutes.dashboard,
-        );
+        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -152,11 +157,7 @@ class _AdminGuard extends StatelessWidget {
         );
       });
 
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return child;
@@ -176,7 +177,6 @@ class _SplashGate extends StatefulWidget {
 
 class _SplashGateState extends State<_SplashGate>
     with SingleTickerProviderStateMixin {
-
   late AnimationController _ctrl;
   late Animation<double> _scaleAnim;
   late Animation<double> _fadeAnim;
@@ -193,22 +193,12 @@ class _SplashGateState extends State<_SplashGate>
     _scaleAnim = Tween<double>(
       begin: 0.7,
       end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: Curves.easeOutBack,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack));
 
     _fadeAnim = Tween<double>(
       begin: 0.0,
       end: 1.0,
-    ).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: Curves.easeIn,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeIn));
 
     _ctrl.forward();
 
@@ -216,9 +206,7 @@ class _SplashGateState extends State<_SplashGate>
   }
 
   Future<void> _initApp() async {
-    await Future.delayed(
-      const Duration(milliseconds: 1500),
-    );
+    await Future.delayed(const Duration(milliseconds: 1500));
 
     // ignore: use_build_context_synchronously
     final auth = context.read<AuthProvider>();
@@ -228,15 +216,9 @@ class _SplashGateState extends State<_SplashGate>
     if (!mounted) return;
 
     if (auth.isAuthenticated) {
-      Navigator.pushReplacementNamed(
-        context,
-        AppRoutes.dashboard,
-      );
+      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
     } else {
-      Navigator.pushReplacementNamed(
-        context,
-        AppRoutes.login,
-      );
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
     }
   }
 
@@ -281,9 +263,7 @@ class _SplashGateState extends State<_SplashGate>
                     ),
 
                     child: const Image(
-                      image: AssetImage(
-                        'assets/images/dinsos_logo.png',
-                      ),
+                      image: AssetImage('assets/images/dinsos_logo.png'),
                       width: 48,
                       height: 48,
                     ),

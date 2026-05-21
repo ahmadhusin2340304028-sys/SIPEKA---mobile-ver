@@ -95,7 +95,7 @@ class _AdminKegiatanScreenState extends State<AdminKegiatanScreen> {
         children: [
           // ── Search bar ────────────────────────────────────────────────
           Container(
-            color: Colors.white,
+            color: AppTheme.surfaceOf(context),
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: TextField(
               controller: _searchCtrl,
@@ -121,7 +121,7 @@ class _AdminKegiatanScreenState extends State<AdminKegiatanScreen> {
 
           // ── Stats bar ─────────────────────────────────────────────────
           Container(
-            color: AppColors.surfaceGray,
+            color: AppTheme.surfaceGrayOf(context),
             padding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
@@ -342,9 +342,9 @@ class _KegiatanAdminCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceOf(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: AppTheme.borderOf(context), width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,18 +481,18 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surfaceGray,
+        color: AppTheme.surfaceGrayOf(context),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: AppTheme.borderOf(context), width: 0.5),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: AppColors.textMuted),
+          Icon(icon, size: 11, color: AppTheme.textMutedOf(context)),
           const SizedBox(width: 4),
           Text(label,
-              style: const TextStyle(
-                  fontSize: 10, color: AppColors.textMuted)),
+              style: TextStyle(
+                  fontSize: 10, color: AppTheme.textMutedOf(context))),
         ],
       ),
     );

@@ -14,6 +14,7 @@ import '../../widgets/summary_card.dart';
 import '../../widgets/progress_bar.dart';
 import '../../models/kegiatan_model.dart';
 import '../../models/undangan_model.dart';
+import '../../providers/theme_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -103,9 +104,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceGray,
+                      color: AppTheme.surfaceGrayOf(context),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.border, width: 0.5),
+                      border: Border.all(color: AppTheme.borderOf(context), width: 0.5),
                     ),
                     child: Text(
                       undangan.judul,
@@ -135,12 +136,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           decoration: BoxDecoration(
                             color: isDelegasi
                                 ? AppColors.primary
-                                : Colors.white,
+                                : AppTheme.surfaceOf(context),
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
                               color: isDelegasi
                                   ? AppColors.primary
-                                  : AppColors.border,
+                                  : AppTheme.borderOf(context),
                               width: 1.5,
                             ),
                           ),
@@ -226,12 +227,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceGray,
+                        color: AppTheme.surfaceGrayOf(context),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: selectedBukti != null
                               ? AppColors.success
-                              : AppColors.border,
+                              : AppTheme.borderOf(context),
                           width: selectedBukti != null ? 1 : 0.75,
                         ),
                       ),
@@ -633,14 +634,17 @@ class _SectionTitle extends StatelessWidget {
   const _SectionTitle(this.text);
 
   @override
-  Widget build(BuildContext context) => Text(
-    text,
-    style: const TextStyle(
-      fontSize: 14,
-      fontWeight: FontWeight.w600,
-      color: AppColors.textPrimary,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: isDark ? const Color(0xFFCBD5E1) : AppColors.textSecondary,
+      ),
+    );
+  }
 }
 
 class _GreetingBanner extends StatelessWidget {
@@ -783,9 +787,9 @@ class _BidangProgressCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
       ),
       child: Column(
         children: summary.bidangProgress.map((b) {
@@ -820,9 +824,9 @@ class _QuickAction extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border, width: 0.5),
+          border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -877,9 +881,9 @@ class _PendingUndanganLoadingCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
       ),
       child: const Row(
         children: [
@@ -922,9 +926,9 @@ class _DashboardPendingUndanganCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: Theme.of(context).dividerColor, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -21,14 +21,18 @@ class KegiatanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = Theme.of(context).dividerColor;
+    final cardColor = Theme.of(context).cardColor;
+    final titleColor = Theme.of(context).textTheme.bodyLarge?.color ?? AppColors.textPrimary;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(13),
           border: Border.all(
-            color: AppColors.border,
+            color: borderColor,
             width: 0.5,
           ),
         ),
@@ -70,10 +74,10 @@ class KegiatanCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               kegiatan.nama,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
+                                color: titleColor,
                                 height: 1.3,
                               ),
                             ),
@@ -178,9 +182,13 @@ class _ProgressMiniRow extends StatelessWidget {
       children: [
         SizedBox(
           width: 52,
-          child: Text(label,
-              style: const TextStyle(
-                  fontSize: 10, color: AppColors.textMuted)),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: Theme.of(context).textTheme.bodySmall?.color ?? AppColors.textMuted,
+            ),
+          ),
         ),
         Expanded(
           child: ClipRRect(
@@ -188,7 +196,7 @@ class _ProgressMiniRow extends StatelessWidget {
             child: LinearProgressIndicator(
               value: (value / 100).clamp(0.0, 1.0),
               minHeight: 5,
-              backgroundColor: AppColors.border,
+              backgroundColor: Theme.of(context).dividerColor,
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),

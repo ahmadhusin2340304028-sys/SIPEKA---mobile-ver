@@ -46,9 +46,9 @@ class _DetailKegiatanScreenState extends State<DetailKegiatanScreen> {
     if (kegiatan == null) {
       return Scaffold(
         appBar: AppBar(title: const Text(AppStrings.detailKegiatan)),
-        body: const Center(
+        body: Center(
           child: Text('Data tidak tersedia.',
-              style: TextStyle(color: AppColors.textMuted)),
+              style: TextStyle(color: AppTheme.textMutedOf(context))),
         ),
       );
     }
@@ -169,19 +169,19 @@ class _HeaderCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceOf(context),
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: AppTheme.borderOf(context), width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             kegiatan.nama,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: AppTheme.textPrimaryOf(context),
               height: 1.3,
             ),
           ),
@@ -196,8 +196,8 @@ class _HeaderCard extends StatelessWidget {
                   fg: AppColors.primaryDark),
               _Chip(
                   label: kegiatan.tahun.toString(),
-                  bg: AppColors.surfaceGray,
-                  fg: AppColors.textMuted),
+                  bg: AppTheme.surfaceGrayOf(context),
+                  fg: AppTheme.textMutedOf(context)),
             ],
           ),
         ],
@@ -237,19 +237,19 @@ class _Card extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceOf(context),
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: AppTheme.borderOf(context), width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: AppTheme.textPrimaryOf(context),
             ),
           ),
           const SizedBox(height: 12),
@@ -277,9 +277,9 @@ class _InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceOf(context),
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: AppColors.border, width: 0.5),
+        border: Border.all(color: AppTheme.borderOf(context), width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,10 +288,10 @@ class _InfoCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: AppTheme.textPrimaryOf(context),
               ),
             ),
           ),
@@ -304,9 +304,9 @@ class _InfoCard extends StatelessWidget {
               decoration: BoxDecoration(
                 border: isLast
                     ? null
-                    : const Border(
+                    : Border(
                         bottom: BorderSide(
-                            color: AppColors.border, width: 0.5)),
+                            color: AppTheme.borderOf(context), width: 0.5)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,17 +314,17 @@ class _InfoCard extends StatelessWidget {
                   SizedBox(
                     width: 140,
                     child: Text(e.value.key,
-                        style: const TextStyle(
-                            fontSize: 12, color: AppColors.textMuted)),
+                        style: TextStyle(
+                            fontSize: 12, color: AppTheme.textMutedOf(context))),
                   ),
                   Expanded(
                     child: Text(
                       e.value.value,
                       textAlign: TextAlign.right,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: AppColors.textPrimary,
+                        color: AppTheme.textPrimaryOf(context),
                       ),
                     ),
                   ),
@@ -395,9 +395,9 @@ class _MonthlyBarChartState extends State<_MonthlyBarChart>
                   children: [
                     Text(
                       '${d.fisik.toStringAsFixed(0)}%',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 7.5,
-                          color: AppColors.textMuted,
+                          color: AppTheme.textMutedOf(context),
                           fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 2),
@@ -412,8 +412,8 @@ class _MonthlyBarChartState extends State<_MonthlyBarChart>
                     const SizedBox(height: 4),
                     Text(
                       monthLabel,
-                      style: const TextStyle(
-                          fontSize: 8, color: AppColors.textMuted),
+                      style: TextStyle(
+                          fontSize: 8, color: AppTheme.textMutedOf(context)),
                     ),
                   ],
                 ),
@@ -492,9 +492,9 @@ class _TriwulanSheet extends StatelessWidget {
         children: [
           // ── Handle + Header ───────────────────────────────────────────────
           Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceOf(context),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Column(
               children: [
@@ -503,7 +503,7 @@ class _TriwulanSheet extends StatelessWidget {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: AppTheme.borderOf(context),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -515,20 +515,20 @@ class _TriwulanSheet extends StatelessWidget {
                       const Icon(Icons.bar_chart_rounded,
                           color: AppColors.primary, size: 20),
                       const SizedBox(width: 8),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Detail Realisasi per Triwulan',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
+                            color: AppTheme.textPrimaryOf(context),
                           ),
                         ),
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close_rounded,
-                            size: 20, color: AppColors.textMuted),
+                        icon: Icon(Icons.close_rounded,
+                            size: 20, color: AppTheme.textMutedOf(context)),
                         visualDensity: VisualDensity.compact,
                       ),
                     ],
@@ -540,8 +540,8 @@ class _TriwulanSheet extends StatelessWidget {
                       const EdgeInsets.fromLTRB(20, 0, 20, 14),
                   child: Text(
                     '${kegiatan.bidang}  ·  Target: ${kegiatan.target.toStringAsFixed(0)} ${kegiatan.satuan}  ·  Pagu: ${AppUtils.formatCurrencyCompact(kegiatan.paguAnggaran)}',
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textMuted),
+                    style: TextStyle(
+                        fontSize: 11, color: AppTheme.textMutedOf(context)),
                   ),
                 ),
                 const Divider(height: 0),
@@ -636,10 +636,10 @@ class _TriwulanCardState extends State<_TriwulanCard> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.surfaceOf(context),
         borderRadius: BorderRadius.circular(13),
         border: Border.all(
-          color: _hasData ? _statusColor.withOpacity(0.3) : AppColors.border,
+          color: _hasData ? _statusColor.withOpacity(0.3) : AppTheme.borderOf(context),
           width: _hasData ? 1 : 0.5,
         ),
       ),
@@ -663,7 +663,7 @@ class _TriwulanCardState extends State<_TriwulanCard> {
                         decoration: BoxDecoration(
                           color: _hasData
                               ? _statusColor.withOpacity(0.12)
-                              : AppColors.surfaceGray,
+                              : AppTheme.surfaceGrayOf(context),
                           shape: BoxShape.circle,
                         ),
                         child: Center(
@@ -672,7 +672,7 @@ class _TriwulanCardState extends State<_TriwulanCard> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: _hasData ? _statusColor : AppColors.textHint,
+                              color: _hasData ? _statusColor : AppTheme.textMutedOf(context),
                             ),
                           ),
                         ),
@@ -684,16 +684,16 @@ class _TriwulanCardState extends State<_TriwulanCard> {
                           children: [
                             Text(
                               'Triwulan ${d.nomor}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
+                                color: AppTheme.textPrimaryOf(context),
                               ),
                             ),
                             Text(
                               _bulanRange(d.nomor),
-                              style: const TextStyle(
-                                  fontSize: 11, color: AppColors.textMuted),
+                              style: TextStyle(
+                                  fontSize: 11, color: AppTheme.textMutedOf(context)),
                             ),
                           ],
                         ),
@@ -705,7 +705,7 @@ class _TriwulanCardState extends State<_TriwulanCard> {
                         decoration: BoxDecoration(
                           color: _hasData
                               ? _statusColor.withOpacity(0.1)
-                              : AppColors.surfaceGray,
+                              : AppTheme.surfaceGrayOf(context),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
@@ -713,7 +713,7 @@ class _TriwulanCardState extends State<_TriwulanCard> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: _hasData ? _statusColor : AppColors.textHint,
+                            color: _hasData ? _statusColor : AppTheme.textMutedOf(context),
                           ),
                         ),
                       ),
@@ -723,7 +723,7 @@ class _TriwulanCardState extends State<_TriwulanCard> {
                             ? Icons.keyboard_arrow_up_rounded
                             : Icons.keyboard_arrow_down_rounded,
                         size: 18,
-                        color: AppColors.textMuted,
+                        color: AppTheme.textMutedOf(context),
                       ),
                     ],
                   ),
@@ -763,12 +763,12 @@ class _TriwulanCardState extends State<_TriwulanCard> {
                     decoration: BoxDecoration(
                       color: hasB
                           ? AppColors.primaryLight
-                          : AppColors.surfaceGray,
+                          : AppTheme.surfaceGrayOf(context),
                       borderRadius: BorderRadius.circular(9),
                       border: Border.all(
                         color: hasB
                             ? const Color(0xFFBFDBFE)
-                            : AppColors.border,
+                            : AppTheme.borderOf(context),
                         width: 0.5,
                       ),
                     ),
@@ -786,7 +786,7 @@ class _TriwulanCardState extends State<_TriwulanCard> {
                               fontWeight: FontWeight.w500,
                               color: hasB
                                   ? AppColors.primaryDark
-                                  : AppColors.textMuted,
+                                  : AppTheme.textMutedOf(context),
                             ),
                           ),
                         ),
@@ -851,8 +851,8 @@ class _MiniProgressRow extends StatelessWidget {
         SizedBox(
           width: 54,
           child: Text(label,
-              style: const TextStyle(
-                  fontSize: 10, color: AppColors.textMuted)),
+              style: TextStyle(
+                  fontSize: 10, color: AppTheme.textMutedOf(context))),
         ),
         Expanded(
           child: ClipRRect(
@@ -860,7 +860,7 @@ class _MiniProgressRow extends StatelessWidget {
             child: LinearProgressIndicator(
               value: (value / 100).clamp(0.0, 1.0),
               minHeight: 5,
-              backgroundColor: AppColors.border,
+              backgroundColor: AppTheme.borderOf(context),
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
@@ -906,7 +906,7 @@ class _BulanStat extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 9, color: AppColors.textHint),
+          style: TextStyle(fontSize: 9, color: AppTheme.textMutedOf(context)),
         ),
         const SizedBox(height: 1),
         Text(
@@ -914,7 +914,7 @@ class _BulanStat extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: hasData ? AppColors.textPrimary : AppColors.textHint,
+            color: hasData ? AppTheme.textPrimaryOf(context) : AppTheme.textMutedOf(context),
           ),
         ),
       ],

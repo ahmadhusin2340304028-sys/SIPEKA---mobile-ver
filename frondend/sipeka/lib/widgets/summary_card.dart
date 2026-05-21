@@ -29,6 +29,7 @@ class SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = accentColor ?? AppColors.primary;
     final bg = bgColor ?? AppColors.primaryLight;
+    final labelColor = Theme.of(context).textTheme.bodySmall?.color ?? AppColors.textMuted;
 
     return GestureDetector(
       onTap: onTap,
@@ -74,9 +75,9 @@ class SummaryCard extends StatelessWidget {
             const SizedBox(height: 3),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textMuted,
+                color: labelColor,
                 fontWeight: FontWeight.w500,
               ),
             ),
