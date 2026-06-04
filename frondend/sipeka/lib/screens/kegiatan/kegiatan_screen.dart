@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/kegiatan_provider.dart';
 import '../../widgets/custom_drawer.dart';
 import '../../widgets/kegiatan_card.dart';
+import 'export_laporan_sheet.dart';
 
 class KegiatanScreen extends StatefulWidget {
   const KegiatanScreen({super.key});
@@ -54,6 +55,7 @@ class _KegiatanScreenState extends State<KegiatanScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.kegiatan)),
       drawer: const CustomDrawer(),
+      floatingActionButton: _ExportFab(), 
       body: Column(
         children: [
           // ── Search + Filters ─────────────────────────────────────────────
@@ -307,6 +309,25 @@ class _EmptyState extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _ExportFab extends StatelessWidget {
+  const _ExportFab();
+ 
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.extended(
+      onPressed: () => showExportLaporanSheet(context),
+      icon: const Icon(Icons.download_rounded, size: 20),
+      label: const Text(
+        'Export',
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+      backgroundColor: AppColors.primary,
+      foregroundColor: Colors.white,
+      elevation: 3,
     );
   }
 }

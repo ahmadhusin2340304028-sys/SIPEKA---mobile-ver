@@ -5,23 +5,46 @@ import 'package:url_launcher/url_launcher.dart';
 class TentangScreen extends StatelessWidget {
   const TentangScreen({super.key});
 
-  Widget buildIconItem(IconData icon, String label, String url, Color color) {
-    return Expanded(
-      child: InkWell(
-        onTap: () async {
-          final uri = Uri.parse(url);
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri);
-          }
-        },
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Widget buildContactItem({
+    required IconData icon,
+    required String label,
+    required String url,
+    required Color color,
+  }) {
+    return InkWell(
+      onTap: () => _launchUrl(url),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 40, color: color),
-            SizedBox(height: 6),
+            Icon(icon, size: 32, color: color),
+            const SizedBox(height: 8),
             Text(
               label,
-              style: TextStyle(fontSize: 12),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -35,165 +58,203 @@ class TentangScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Tentang Aplikasi"),
+        elevation: 0,
       ),
       drawer: const CustomDrawer(),
       body: SingleChildScrollView(
-        
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // LOGO & HEADER
+            // ==================== HEADER ====================
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 30),
+              padding: const EdgeInsets.symmetric(vertical: 40),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                   colors: [
                     Colors.blue.shade700,
-                    Colors.blue.shade400,
+                    Colors.blue.shade500,
+                    Colors.indigo.shade400,
                   ],
                 ),
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(24),
-                  top: Radius.circular(24)
-                ),
+                borderRadius: BorderRadius.circular(24),
               ),
               child: const Column(
                 children: [
-                  SizedBox(height: 20),
                   CircleAvatar(
-                    radius: 42,
-                    backgroundImage:
-                        AssetImage("assets/images/dinsos_logo.png"),
+                    radius: 48,
+                    backgroundColor: Colors.white,
+                    child: CircleAvatar(
+                      radius: 44,
+                      backgroundImage:  AssetImage("assets/images/logo_sipeka.png"),
+                    ),
                   ),
-                  SizedBox(height: 12),
-                  Text(
+                   SizedBox(height: 16),
+                   Text(
                     "SIPEKA",
                     style: TextStyle(
-                      fontSize: 22,
+                      fontSize: 26,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      letterSpacing: 1.2,
                     ),
                   ),
-                  Text(
+                   Text(
                     "Versi 1.0.0",
-                    style: TextStyle(color: Colors.white70),
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 15,
+                    ),
                   ),
                 ],
               ),
             ),
-             const SizedBox(height: 24),
 
-            // DESKRIPSI
-             const Text(
+            const SizedBox(height: 28),
+
+            // ==================== DESKRIPSI ====================
+            const Text(
               "Deskripsi",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-             const SizedBox(height: 8),
-             const Text(
-              "SIPEKA (Sistem Informasi Pelaporan Kinerja dan Anggaran) "
-              "merupakan aplikasi yang dirancang untuk membantu proses "
-              "monitoring, pencatatan, serta pelaporan kegiatan secara "
-              "efektif dan terintegrasi.",
-              textAlign: TextAlign.justify,
-            ),
-
-             const SizedBox(height: 20),
-
-            // PENGEMBANG
-             const Text(
-              "Pengembang",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-             const SizedBox(height: 8),
-
-            const Card(
-              elevation: 2,
-              child: Column(
-                children:  [
-                  ListTile(
-                    // Image.asset("assets/images/ahmadhusin.jpeg", width: 40, height: 40)
-                    leading: CircleAvatar(
-                      radius: 28, // ukuran lebih besar
-                      backgroundImage: AssetImage("assets/images/ahmadhusin.jpeg"),
-                    ),
-                    title: Text("Ahmad Husin"),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Software Developer"),
-                        SizedBox(height: 4),
-                        Text("Email: ahmadhusin.2340304028@gmail.com"),
-                        Text("WA: 0852-5687-5779"),
-                      ],
-                    ),
-                  ),
-                  Divider(height: 1),
-                  ListTile(
-                    leading: CircleAvatar(
-                      radius: 28,
-                      backgroundImage: AssetImage("assets/images/ahmadhusin.jpeg"),
-                    ),
-                    title: Text("Rangga Saputra"),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Software Developer"),
-                        SizedBox(height: 4),
-                        Text("Email: rangga@email.com"),
-                        Text("WA: 0812-3456-7891"),
-                      ],
-                    ),
-                  ),
-                  Divider(height: 1),
-                  ListTile(
-                    leading: CircleAvatar(
-                      radius: 28,
-                      backgroundImage: AssetImage("assets/images/ahmadhusin.jpeg"),
-                    ),
-                    title: Text("Adi Saputra"),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Software Developer"),
-                        SizedBox(height: 4),
-                        Text("Email: adi@email.com"),
-                        Text("WA: 0812-3456-7892"),
-                      ],
-                    ),
-                  ),
-                ],
+             const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text(
+                "SIPEKA (Sistem Informasi Pelaporan Kinerja dan Anggaran) "
+                "merupakan aplikasi yang dirancang untuk membantu proses "
+                "monitoring, pencatatan, serta pelaporan kegiatan secara "
+                "efektif dan terintegrasi.",
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.6,
+                ),
+                textAlign: TextAlign.justify,
               ),
             ),
 
-             const SizedBox(height: 20),
+            const SizedBox(height: 28),
 
-            // KONTAK
-             const Text(
-              "Kontak",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            // ==================== PENGEMBANG ====================
+            const Text(
+              "Pengembang",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-             const SizedBox(height: 12),
-             
+            const SizedBox(height: 12),
+            Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 35,
+                      backgroundImage:  AssetImage("assets/images/ahmadhusin.jpeg"),
+                    ),
+                     SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                           Text(
+                            "Ahmad Husin",
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                           SizedBox(height: 4),
+                           Text(
+                            "Software Developer",
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                           SizedBox(height: 8),
+                           Text("ahmadhusin.2340304028@gmail.com"),
+                           Text("0852-5687-5779"),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
-            // Facebook
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            const SizedBox(height: 28),
+
+            // ==================== KONTAK ====================
+            const Text(
+              "Kontak",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.4,
               children: [
-                buildIconItem(Icons.email, "Email", "mailto:it@domain.go.id", Colors.red),
-                buildIconItem(Icons.facebook, "Facebook", "https://www.facebook.com/DinsosPM", Colors.blue),
-                buildIconItem(Icons.camera_alt, "Instagram", "https://www.instagram.com/dinsospm", Colors.purple),
-                buildIconItem(Icons.language, "Website", "https://dinsos.tarakankota.go.id/", Colors.green),
+                buildContactItem(
+                  icon: Icons.email,
+                  label: "Email",
+                  url: "mailto:it@domain.go.id",
+                  color: Colors.red,
+                ),
+                buildContactItem(
+                  icon: Icons.facebook,
+                  label: "Facebook",
+                  url: "https://www.facebook.com/DinsosPM",
+                  color: Colors.blue[800]!,
+                ),
+                buildContactItem(
+                  icon: Icons.camera_alt,
+                  label: "Instagram",
+                  url: "https://www.instagram.com/dinsospm",
+                  color: Colors.pink,
+                ),
+                buildContactItem(
+                  icon: Icons.language,
+                  label: "Website",
+                  url: "https://dinsos.tarakankota.go.id/",
+                  color: Colors.green,
+                ),
               ],
             ),
 
-             const SizedBox(height: 30),
+            const SizedBox(height: 40),
 
-             const Center(
+            // ==================== FOOTER ====================
+            Center(
               child: Text(
                 "© 2026 SIPEKA Team",
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],

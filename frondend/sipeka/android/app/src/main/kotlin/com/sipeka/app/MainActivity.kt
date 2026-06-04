@@ -1,4 +1,4 @@
-package com.example.sipeka
+package com.sipeka.app
 
 import io.flutter.embedding.android.FlutterActivity
 

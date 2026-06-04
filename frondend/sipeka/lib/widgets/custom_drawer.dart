@@ -303,7 +303,7 @@ class _DrawerHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Image(
-                  image: AssetImage('assets/images/dinsos_logo.png'),
+                  image: AssetImage('assets/images/logo_sipeka.png'),
                   width: 22,
                   height: 22,
                 ),

@@ -1,19 +1,10 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sipeka/models/undangan_model.dart';
 
 class DioProvider {
   static String get baseApiUrl {
-    if (kIsWeb) return 'http://127.0.0.1:8000/api';
-
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        // return 'http://10.0.2.2:8000/api';
-        return 'http://10.156.225.147:8000/api';
-      default:
-        return 'http://127.0.0.1:8000/api';
-    }
+    return 'https://heroic-connection-production-5418.up.railway.app/api';
   }
 
   // dio_provider.dart — getToken() juga simpan user data

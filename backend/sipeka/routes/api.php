@@ -6,6 +6,8 @@ use App\Http\Controllers\API\KegiatanController;
 use App\Http\Controllers\API\RealisasiController;
 use App\Http\Controllers\API\UndanganController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\ExportController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -107,4 +109,10 @@ Route::middleware('auth:sanctum')->group(function () {
                     ->middleware('role:Admin');
             });
         });
+
+    // ── Export ────────────────────────────────────────────────────────────────────
+    Route::prefix('export')->group(function () {
+    Route::get('/excel', [ExportController::class, 'excel']);
+    Route::get('/pdf',   [ExportController::class, 'pdf']);
+});
 });

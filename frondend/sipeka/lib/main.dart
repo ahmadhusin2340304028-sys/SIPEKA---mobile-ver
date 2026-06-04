@@ -252,20 +252,27 @@ class _SplashGateState extends State<_SplashGate>
                     height: 90,
 
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.18),
+                      color: Colors.white,
 
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(50),
 
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
-                        width: 1.5,
-                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
 
-                    child: const Image(
-                      image: AssetImage('assets/images/dinsos_logo.png'),
-                      width: 48,
-                      height: 48,
+                    clipBehavior: Clip.hardEdge,
+
+                    child: const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Image(
+                        image: AssetImage('assets/images/logo_sipeka.png'),
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
 

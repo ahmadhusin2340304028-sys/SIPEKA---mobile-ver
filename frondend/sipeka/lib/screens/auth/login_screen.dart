@@ -151,7 +151,7 @@ class _Logo extends StatelessWidget {
           width: 100,
           height: 100,
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: const Color.fromARGB(255, 255, 255, 255),
             borderRadius: BorderRadius.circular(50),
             boxShadow: [
               BoxShadow(
@@ -162,10 +162,12 @@ class _Logo extends StatelessWidget {
               ),
             ],
           ),
+          clipBehavior: Clip.hardEdge,
           child: const Padding(
-            padding: EdgeInsets.all(10), // makin besar = gambar makin kecil
+            padding: EdgeInsets.all(10),
             child: Image(
-              image: AssetImage('assets/images/dinsos_logo.png'),
+              image: AssetImage('assets/images/logo_sipeka.png'),
+              fit: BoxFit.contain,
             ),
           ),
         ),
