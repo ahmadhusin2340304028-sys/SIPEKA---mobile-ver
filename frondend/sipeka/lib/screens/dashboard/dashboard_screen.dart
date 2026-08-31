@@ -106,7 +106,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     decoration: BoxDecoration(
                       color: AppTheme.surfaceGrayOf(context),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.borderOf(context), width: 0.5),
+                      border: Border.all(
+                          color: AppTheme.borderOf(context), width: 0.5),
                     ),
                     child: Text(
                       undangan.judul,
@@ -1081,9 +1082,8 @@ class _DashboardMetaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = highlight
-        ? (highlightColor ?? AppColors.danger)
-        : AppColors.textMuted;
+    final color =
+        highlight ? (highlightColor ?? AppColors.danger) : AppColors.textMuted;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1131,9 +1131,8 @@ class _DashboardPihakTerkaitRow extends StatelessWidget {
         Wrap(
           spacing: 6,
           runSpacing: 4,
-          children: pihakList
-              .map((p) => _DashboardPihakChip(label: p))
-              .toList(),
+          children:
+              pihakList.map((p) => _DashboardPihakChip(label: p)).toList(),
         ),
       ],
     );

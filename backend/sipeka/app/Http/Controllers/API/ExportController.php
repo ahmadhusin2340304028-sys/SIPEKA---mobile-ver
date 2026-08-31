@@ -30,6 +30,15 @@ class ExportController extends Controller
         $query = $this->buildQuery($request);
         $kegiatan = $query->with(['realisasiFisik', 'realisasiAnggaran'])->get();
 
+        if ($request->filled('min_fisik')) {
+            $minFisik = (float) $request->input('min_fisik');
+            if ($minFisik > 0) {
+                $kegiatan = $kegiatan->filter(function ($k) use ($minFisik) {
+                    return $k->total_realisasi_fisik >= $minFisik;
+                });
+            }
+        }
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Laporan Kegiatan');
@@ -268,6 +277,15 @@ class ExportController extends Controller
     {
         $query = $this->buildQuery($request);
         $kegiatan = $query->with(['realisasiFisik', 'realisasiAnggaran'])->get();
+
+        if ($request->filled('min_fisik')) {
+            $minFisik = (float) $request->input('min_fisik');
+            if ($minFisik > 0) {
+                $kegiatan = $kegiatan->filter(function ($k) use ($minFisik) {
+                    return $k->total_realisasi_fisik >= $minFisik;
+                });
+            }
+        }
 
         $tahun = $request->input('tahun', date('Y'));
         $bidang = $request->input('bidang', 'Semua');

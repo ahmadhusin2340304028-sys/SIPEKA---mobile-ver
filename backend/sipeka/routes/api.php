@@ -34,7 +34,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user',    [AuthController::class, 'me']);
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
-    // Semua role bisa akses dashboard, tapi data difilter per bidang di controller
     Route::get('/dashboard/summary', [KegiatanController::class, 'dashboardSummary']);
 
     // ── Kegiatan ──────────────────────────────────────────────────────────────
@@ -112,7 +111,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Export ────────────────────────────────────────────────────────────────────
     Route::prefix('export')->group(function () {
-    Route::get('/excel', [ExportController::class, 'excel']);
-    Route::get('/pdf',   [ExportController::class, 'pdf']);
-});
+        Route::get('/excel', [ExportController::class, 'excel']);
+        Route::get('/pdf',   [ExportController::class, 'pdf']);
+    });
 });

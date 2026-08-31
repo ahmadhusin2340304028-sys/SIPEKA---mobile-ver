@@ -130,7 +130,6 @@ class KegiatanProvider extends ChangeNotifier {
       print('Fetched kegiatan page $page: $pageData');
 
       if (pageData != null) {
-        // ✅ Wrap map() dalam try tersendiri agar error parsing terlihat jelas
         try {
           final data = pageData['items'] as List<dynamic>? ?? [];
           final bidangOptions = pageData['bidang_options'];

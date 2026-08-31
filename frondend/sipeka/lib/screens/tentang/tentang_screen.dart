@@ -181,7 +181,7 @@ class TentangScreen extends StatelessWidget {
                           ),
                            SizedBox(height: 4),
                            Text(
-                            "Software Developer",
+                            "Software Engginer",
                             style: TextStyle(
                               color: Colors.blue,
                               fontWeight: FontWeight.w500,
@@ -190,6 +190,94 @@ class TentangScreen extends StatelessWidget {
                            SizedBox(height: 8),
                            Text("ahmadhusin.2340304028@gmail.com"),
                            Text("0852-5687-5779"),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 35,
+                      backgroundImage:  AssetImage("assets/images/rangga.png"),
+                    ),
+                     SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                           Text(
+                            "Rangga Saputra",
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                           SizedBox(height: 4),
+                           Text(
+                            "Frontend Developer",
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                           SizedBox(height: 8),
+                           Text("ranggasaputra270504@gmail.com"),
+                           Text("081254834538"),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 35,
+                      backgroundImage:  AssetImage("assets/images/putra.png"),
+                    ),
+                     SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                           Text(
+                            "Adi Saputra",
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                           SizedBox(height: 4),
+                           Text(
+                            "UI/UX Designer",
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                           SizedBox(height: 8),
+                           Text("adisaaputraa19@gmail.com"),
+                           Text("0853-4610-1011"),
                         ],
                       ),
                     ),

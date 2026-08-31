@@ -4,7 +4,7 @@ import 'package:sipeka/models/undangan_model.dart';
 
 class DioProvider {
   static String get baseApiUrl {
-    return 'https://heroic-connection-production-5418.up.railway.app/api';
+    return 'http://10.0.2.2:8000/api';
   }
 
   // dio_provider.dart — getToken() juga simpan user data
@@ -426,9 +426,9 @@ class DioProvider {
                 .map((e) => UndanganModel.fromJson(e as Map<String, dynamic>))
                 .toList(),
             'current_page': toInt(body['current_page'], page),
-            'last_page':    toInt(body['last_page'], page),
-            'per_page':     toInt(body['per_page'], perPage),
-            'total':        toInt(body['total'], list.length),
+            'last_page': toInt(body['last_page'], page),
+            'per_page': toInt(body['per_page'], perPage),
+            'total': toInt(body['total'], list.length),
             'total_pending': toInt(response.data['total_pending'], 0),
           };
         }
@@ -440,9 +440,9 @@ class DioProvider {
                 .map((e) => UndanganModel.fromJson(e as Map<String, dynamic>))
                 .toList(),
             'current_page': 1,
-            'last_page':    1,
-            'per_page':     body.length,
-            'total':        body.length,
+            'last_page': 1,
+            'per_page': body.length,
+            'total': body.length,
           };
         }
       }
