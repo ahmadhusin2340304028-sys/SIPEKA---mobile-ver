@@ -13,6 +13,7 @@ import 'providers/undangan_provider.dart';
 import 'providers/realisasi_provider.dart';
 import 'providers/admin_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/bidang_provider.dart';
 
 import 'screens/auth/login_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
@@ -26,6 +27,7 @@ import 'screens/tentang/tentang_screen.dart';
 
 import 'screens/admin/admin_kegiatan_screen.dart';
 import 'screens/admin/admin_undangan_screen.dart';
+import 'screens/admin/admin_bidang_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,8 +64,10 @@ class SipekaApp extends StatelessWidget {
         // ✅ Admin Provider
         ChangeNotifierProvider(create: (_) => AdminProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-      ],
 
+        // ✅ Bidang Provider — master data bidang untuk seluruh fitur
+        ChangeNotifierProvider(create: (_) => BidangProvider()),
+      ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
           final isDark = themeProvider.isDarkMode;
@@ -71,13 +75,12 @@ class SipekaApp extends StatelessWidget {
           return AnnotatedRegion<SystemUiOverlayStyle>(
             value: SystemUiOverlayStyle(
               statusBarColor: Colors.transparent,
-              statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-              systemNavigationBarColor: isDark
-                  ? const Color(0xFF0F172A)
-                  : AppColors.background,
-              systemNavigationBarIconBrightness: isDark
-                  ? Brightness.light
-                  : Brightness.dark,
+              statusBarIconBrightness:
+                  isDark ? Brightness.light : Brightness.dark,
+              systemNavigationBarColor:
+                  isDark ? const Color(0xFF0F172A) : AppColors.background,
+              systemNavigationBarIconBrightness:
+                  isDark ? Brightness.light : Brightness.dark,
             ),
             child: MaterialApp(
               title: AppStrings.appName,
@@ -111,6 +114,9 @@ class SipekaApp extends StatelessWidget {
 
                 AppRoutes.adminUndangan: (_) =>
                     const _AdminGuard(child: AdminUndanganScreen()),
+
+                AppRoutes.adminBidang: (_) =>
+                    const _AdminGuard(child: AdminBidangScreen()),
               },
             ),
           );
@@ -232,17 +238,13 @@ class _SplashGateState extends State<_SplashGate>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.primary,
-
       body: Center(
         child: AnimatedBuilder(
           animation: _ctrl,
-
           builder: (_, __) => FadeTransition(
             opacity: _fadeAnim,
-
             child: ScaleTransition(
               scale: _scaleAnim,
-
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -250,12 +252,9 @@ class _SplashGateState extends State<_SplashGate>
                   Container(
                     width: 90,
                     height: 90,
-
                     decoration: BoxDecoration(
                       color: Colors.white,
-
                       borderRadius: BorderRadius.circular(50),
-
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.15),
@@ -264,9 +263,7 @@ class _SplashGateState extends State<_SplashGate>
                         ),
                       ],
                     ),
-
                     clipBehavior: Clip.hardEdge,
-
                     child: const Padding(
                       padding: EdgeInsets.all(12),
                       child: Image(
@@ -281,7 +278,6 @@ class _SplashGateState extends State<_SplashGate>
                   // App Name
                   const Text(
                     AppStrings.appName,
-
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 32,
@@ -294,7 +290,6 @@ class _SplashGateState extends State<_SplashGate>
 
                   Text(
                     'Kinerja & Anggaran Kegiatan',
-
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.75),
                       fontSize: 13,
@@ -308,7 +303,6 @@ class _SplashGateState extends State<_SplashGate>
                   SizedBox(
                     width: 28,
                     height: 28,
-
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
                       color: Colors.white.withOpacity(0.7),

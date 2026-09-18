@@ -3,6 +3,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Bidang;
 use App\Models\Kegiatan;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -20,18 +21,42 @@ class DatabaseSeeder extends Seeder
         DB::table('undangan')->truncate();
         DB::table('kegiatan')->truncate();
         DB::table('users')->truncate();
+        DB::table('bidang')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
+        // ── Bidang (master data — dipakai di Kegiatan, Undangan, Export, dst) ──
+        $bidangList = [
+            ['nama' => 'Perencanaan dan Keuangan', 'keterangan' => 'Perencanaan program dan pengelolaan keuangan'],
+            ['nama' => 'Umum dan Kepegawaian', 'keterangan' => 'Administrasi umum dan kepegawaian'],
+            ['nama' => 'Rehabilitasi Sosial', 'keterangan' => 'Pelayanan dan rehabilitasi sosial'],
+            ['nama' => 'Perlindungan dan Jaminan Sosial', 'keterangan' => 'Perlindungan dan jaminan sosial masyarakat'],
+            ['nama' => 'Pemberdayaan Sosial', 'keterangan' => 'Pemberdayaan sosial dan kelompok masyarakat'],
+            ['nama' => 'Pemberdayaan Masyarakat', 'keterangan' => 'Pemberdayaan dan pengembangan masyarakat/desa'],
+        ];
+
+        // nama bidang → id, dipakai untuk menghubungkan akun staff utama
+        // lewat kolom users.bidang_id di bawah.
+        $bidangIdByNama = [];
+        foreach ($bidangList as $b) {
+            $created = Bidang::create($b);
+            $bidangIdByNama[$created->nama] = $created->id;
+        }
+
         // ── Users (sesuai screenshot) ─────────────────────────────────────────
+        // Key 'bidang' (opsional) = nama bidang yang otomatis dihubungkan
+        // lewat users.bidang_id (akun staff UTAMA bidang tsb). Akun jabatan
+        // struktural lain (Kepala Bidang X, Kepala Sub Bagian Y, dst) TIDAK
+        // diberi key ini — tetap resolve lewat User::BIDANG_ROLE_MAP seperti
+        // sebelumnya (lihat App\Models\User).
         $users = [
             ['username' => 'admin',                 'password' => 'dinsos123', 'role' => 'Admin'],
             ['username' => 'kadis',                 'password' => 'dinsos123', 'role' => 'Kepala Dinas'],
-            ['username' => 'staff perencanaan',     'password' => 'dinsos123', 'role' => 'Perencanaan dan Keuangan'],
-            ['username' => 'staff umum',            'password' => 'dinsos123', 'role' => 'Umum dan Kepegawaian'],
-            ['username' => 'staff resos',           'password' => 'dinsos123', 'role' => 'Rehabilitasi Sosial'],
-            ['username' => 'staff linjamsos',       'password' => 'dinsos123', 'role' => 'Perlindungan dan Jaminan Sosial'],
-            ['username' => 'staff dayasos',         'password' => 'dinsos123', 'role' => 'Pemberdayaan Sosial'],
-            ['username' => 'staff PM',              'password' => 'dinsos123', 'role' => 'Pemberdayaan Masyarakat'],
+            ['username' => 'staff perencanaan',     'password' => 'dinsos123', 'role' => 'Perencanaan dan Keuangan', 'bidang' => 'Perencanaan dan Keuangan'],
+            ['username' => 'staff umum',            'password' => 'dinsos123', 'role' => 'Umum dan Kepegawaian', 'bidang' => 'Umum dan Kepegawaian'],
+            ['username' => 'staff resos',           'password' => 'dinsos123', 'role' => 'Rehabilitasi Sosial', 'bidang' => 'Rehabilitasi Sosial'],
+            ['username' => 'staff linjamsos',       'password' => 'dinsos123', 'role' => 'Perlindungan dan Jaminan Sosial', 'bidang' => 'Perlindungan dan Jaminan Sosial'],
+            ['username' => 'staff dayasos',         'password' => 'dinsos123', 'role' => 'Pemberdayaan Sosial', 'bidang' => 'Pemberdayaan Sosial'],
+            ['username' => 'staff PM',              'password' => 'dinsos123', 'role' => 'Pemberdayaan Masyarakat', 'bidang' => 'Pemberdayaan Masyarakat'],
             ['username' => 'kabid sosial',          'password' => 'dinsos123', 'role' => 'Kepala Bidang Sosial'],
             ['username' => 'kasubbag perencanaan',  'password' => 'dinsos123', 'role' => 'Kepala Sub Bagian Perencanaan'],
             ['username' => 'kabid pm',              'password' => 'dinsos123', 'role' => 'Kepala Bidang Pemberdayaan Masyarakat'],
@@ -40,6 +65,13 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($users as $u) {
+            $bidangNama = $u['bidang'] ?? null;
+            unset($u['bidang']);
+
+            if ($bidangNama !== null && isset($bidangIdByNama[$bidangNama])) {
+                $u['bidang_id'] = $bidangIdByNama[$bidangNama];
+            }
+
             User::create($u);
         }
 
@@ -123,6 +155,9 @@ class DatabaseSeeder extends Seeder
             Kegiatan::create($k);
         }
 
-        $this->command->info('✓ Seeder selesai: ' . count($users) . ' users, ' . count($kegiatan) . ' kegiatan.');
+        $this->command->info(
+            '✓ Seeder selesai: ' . count($bidangList) . ' bidang, ' .
+            count($users) . ' users, ' . count($kegiatan) . ' kegiatan.'
+        );
     }
 }

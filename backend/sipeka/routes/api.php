@@ -2,6 +2,7 @@
 // routes/api.php
 
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\BidangController;
 use App\Http\Controllers\API\KegiatanController;
 use App\Http\Controllers\API\RealisasiController;
 use App\Http\Controllers\API\UndanganController;
@@ -35,6 +36,26 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
     Route::get('/dashboard/summary', [KegiatanController::class, 'dashboardSummary']);
+
+    // ── Bidang (master data) ─────────────────────────────────────────────────
+    // Dipakai sebagai sumber data bidang untuk semua fitur lain (dropdown
+    // input Kegiatan, filter Kegiatan, checklist Undangan, filter Export, dst).
+    // READ → semua role yang login boleh lihat (butuh untuk isi dropdown).
+    // WRITE → Admin saja yang boleh kelola.
+    Route::prefix('bidang')->group(function () {
+        Route::get('/', [BidangController::class, 'index']);
+
+        Route::post('/', [BidangController::class, 'store'])
+            ->middleware('role:Admin');
+
+        Route::put('/{id}', [BidangController::class, 'update'])
+            ->where('id', '[0-9]+')
+            ->middleware('role:Admin');
+
+        Route::delete('/{id}', [BidangController::class, 'destroy'])
+            ->where('id', '[0-9]+')
+            ->middleware('role:Admin');
+    });
 
     // ── Kegiatan ──────────────────────────────────────────────────────────────
     Route::prefix('kegiatan')->group(function () {

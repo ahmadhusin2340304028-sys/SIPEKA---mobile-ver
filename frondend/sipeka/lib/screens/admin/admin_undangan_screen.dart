@@ -5,22 +5,21 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_utils.dart';
 import '../../providers/admin_provider.dart';
+import '../../providers/bidang_provider.dart';
 import '../../widgets/custom_drawer.dart';
 
-/// Semua pihak yang bisa diundang (sesuai BIDANG_ROLE_MAP di User.php)
-const List<String> kPihakTerkaitList = [
+/// Jabatan struktural yang bisa diundang di luar "bidang" murni (Kepala
+/// Dinas, Sekretaris, dan jabatan Kepala Bidang/Sub Bagian). Daftar ini
+/// tetap statis karena terikat ke role akun login (App\Models\User::
+/// BIDANG_ROLE_MAP di backend), bukan bagian dari master data "bidang"
+/// yang dikelola lewat menu "Kelola Bidang".
+const List<String> kJabatanStrukturalList = [
   'Kepala Dinas',
   'Sekretaris',
   'Kepala Bidang Sosial',
   'Kepala Bidang Pemberdayaan Masyarakat',
   'Kepala Sub Bagian Perencanaan',
   'Kepala Sub Bagian Kepegawaian',
-  'Perencanaan dan Keuangan',
-  'Umum dan Kepegawaian',
-  'Rehabilitasi Sosial',
-  'Perlindungan dan Jaminan Sosial',
-  'Pemberdayaan Sosial',
-  'Pemberdayaan Masyarakat',
 ];
 
 class AdminUndanganScreen extends StatefulWidget {
@@ -36,6 +35,8 @@ class _AdminUndanganScreenState extends State<AdminUndanganScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AdminProvider>().loadUndangan();
+      // ✅ Muat daftar bidang (master data) untuk checklist pihak diundang.
+      context.read<BidangProvider>().loadBidang();
     });
   }
 
@@ -118,11 +119,9 @@ class _AdminUndanganScreenState extends State<AdminUndanganScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(children: [
-          Icon(Icons.warning_amber_rounded,
-              color: AppColors.danger, size: 22),
+          Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 22),
           SizedBox(width: 8),
           Text('Konfirmasi Hapus'),
         ]),
@@ -140,8 +139,8 @@ class _AdminUndanganScreenState extends State<AdminUndanganScreen> {
               ),
               child: Text(
                 u['judul_kegiatan']?.toString() ?? '-',
-                style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w500),
+                style:
+                    const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
               ),
             ),
           ],
@@ -153,8 +152,7 @@ class _AdminUndanganScreenState extends State<AdminUndanganScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style:
-                FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
             child: const Text('Hapus'),
           ),
         ],
@@ -168,8 +166,7 @@ class _AdminUndanganScreenState extends State<AdminUndanganScreen> {
         if (ok) {
           AppUtils.showSuccess(context, 'Undangan berhasil dihapus');
         } else {
-          AppUtils.showError(
-              context, ap.errorMessage ?? 'Gagal menghapus');
+          AppUtils.showError(context, ap.errorMessage ?? 'Gagal menghapus');
         }
         ap.clearMessages();
       }
@@ -194,7 +191,11 @@ class _UndanganAdminCard extends StatelessWidget {
   List<String> get _pihakList {
     final raw = data['bidang_terkait']?.toString() ?? '';
     if (raw.isEmpty) return [];
-    return raw.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    return raw
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
   }
 
   String get _menghadiriLabel => data['menghadiri']?.toString() ?? 'Pending';
@@ -211,7 +212,9 @@ class _UndanganAdminCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tanggalRaw = data['tanggal']?.toString() ?? '';
     final tanggalDt = DateTime.tryParse(tanggalRaw);
-    final tanggal = tanggalDt != null ? AppUtils.formatDate(tanggalDt) : (tanggalRaw.isNotEmpty ? tanggalRaw : '-');
+    final tanggal = tanggalDt != null
+        ? AppUtils.formatDate(tanggalDt)
+        : (tanggalRaw.isNotEmpty ? tanggalRaw : '-');
     final waktuRaw = data['waktu']?.toString() ?? '';
     final waktu = waktuRaw.length >= 5
         ? waktuRaw.substring(0, 5)
@@ -233,11 +236,9 @@ class _UndanganAdminCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(14, 11, 14, 10),
             decoration: const BoxDecoration(
               color: AppColors.surfaceGray,
-              borderRadius:
-                  BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
               border: Border(
-                  bottom:
-                      BorderSide(color: AppColors.border, width: 0.5)),
+                  bottom: BorderSide(color: AppColors.border, width: 0.5)),
             ),
             child: Text(
               data['judul_kegiatan']?.toString() ?? '-',
@@ -256,8 +257,7 @@ class _UndanganAdminCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _MetaRow(Icons.calendar_today_rounded,
-                    '$tanggal · $waktu WIB'),
+                _MetaRow(Icons.calendar_today_rounded, '$tanggal · $waktu WIB'),
                 const SizedBox(height: 4),
                 _MetaRow(Icons.location_on_outlined, tempat),
                 const SizedBox(height: 4),
@@ -273,8 +273,8 @@ class _UndanganAdminCard extends StatelessWidget {
                       SizedBox(width: 6),
                       Text(
                         'Pihak yang diundang:',
-                        style: TextStyle(
-                            fontSize: 12, color: AppColors.textMuted),
+                        style:
+                            TextStyle(fontSize: 12, color: AppColors.textMuted),
                       ),
                     ],
                   ),
@@ -282,9 +282,8 @@ class _UndanganAdminCard extends StatelessWidget {
                   Wrap(
                     spacing: 6,
                     runSpacing: 4,
-                    children: _pihakList
-                        .map((p) => _PihakChip(label: p))
-                        .toList(),
+                    children:
+                        _pihakList.map((p) => _PihakChip(label: p)).toList(),
                   ),
                   const SizedBox(height: 6),
                 ],
@@ -323,12 +322,11 @@ class _UndanganAdminCard extends StatelessWidget {
                 TextButton.icon(
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit_rounded, size: 15),
-                  label:
-                      const Text('Edit', style: TextStyle(fontSize: 12)),
+                  label: const Text('Edit', style: TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     minimumSize: Size.zero,
                   ),
                 ),
@@ -336,12 +334,11 @@ class _UndanganAdminCard extends StatelessWidget {
                 TextButton.icon(
                   onPressed: onHapus,
                   icon: const Icon(Icons.delete_outline_rounded, size: 15),
-                  label: const Text('Hapus',
-                      style: TextStyle(fontSize: 12)),
+                  label: const Text('Hapus', style: TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.danger,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     minimumSize: Size.zero,
                   ),
                 ),
@@ -370,8 +367,7 @@ class _MetaRow extends StatelessWidget {
         const SizedBox(width: 6),
         Expanded(
           child: Text(text,
-              style: const TextStyle(
-                  fontSize: 12, color: AppColors.textMuted)),
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
         ),
       ],
     );
@@ -439,8 +435,7 @@ class _UndanganDialogState extends State<_UndanganDialog> {
     final d = widget.data;
     _judulCtrl =
         TextEditingController(text: d?['judul_kegiatan']?.toString() ?? '');
-    _tempatCtrl =
-        TextEditingController(text: d?['tempat']?.toString() ?? '');
+    _tempatCtrl = TextEditingController(text: d?['tempat']?.toString() ?? '');
     _mengundangCtrl =
         TextEditingController(text: d?['pihak_mengundang']?.toString() ?? '');
 
@@ -465,13 +460,15 @@ class _UndanganDialogState extends State<_UndanganDialog> {
       final bidang = d['bidang_terkait']?.toString() ?? '';
       if (bidang.isNotEmpty) {
         _selectedPihak.addAll(
-          bidang
-              .split(',')
-              .map((e) => e.trim())
-              .where((e) => e.isNotEmpty),
+          bidang.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty),
         );
       }
     }
+
+    // ✅ Pastikan daftar bidang selalu fresh setiap kali dialog dibuka.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BidangProvider>().loadBidang();
+    });
   }
 
   @override
@@ -532,7 +529,7 @@ class _UndanganDialogState extends State<_UndanganDialog> {
       'waktu': '$h:$m',
       'tempat': _tempatCtrl.text.trim(),
       'pihak_mengundang': _mengundangCtrl.text.trim(),
-      'bidang_terkait': bidangList,  // array → backend akan join dengan ", "
+      'bidang_terkait': bidangList, // array → backend akan join dengan ", "
     };
 
     bool ok;
@@ -558,12 +555,17 @@ class _UndanganDialogState extends State<_UndanganDialog> {
   @override
   Widget build(BuildContext context) {
     final ap = context.watch<AdminProvider>();
+    // ✅ Gabungan: jabatan struktural (statis) + daftar bidang (dinamis,
+    // mengikuti data yang diatur admin lewat menu "Kelola Bidang").
+    final bp = context.watch<BidangProvider>();
+    final pihakOptions = <String>[
+      ...kJabatanStrukturalList,
+      ...bp.namaList,
+    ];
 
     return Dialog(
-      insetPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -694,8 +696,7 @@ class _UndanganDialogState extends State<_UndanganDialog> {
                     const SizedBox(height: 4),
                     const Text(
                       'Pilih satu atau lebih pihak yang akan menerima undangan',
-                      style: TextStyle(
-                          fontSize: 11, color: AppColors.textHint),
+                      style: TextStyle(fontSize: 11, color: AppColors.textHint),
                     ),
                     const SizedBox(height: 8),
 
@@ -708,9 +709,8 @@ class _UndanganDialogState extends State<_UndanganDialog> {
                             .map((p) => Chip(
                                   label: Text(p,
                                       style: const TextStyle(fontSize: 11)),
-                                  deleteIcon: const Icon(
-                                      Icons.close_rounded,
-                                      size: 14),
+                                  deleteIcon:
+                                      const Icon(Icons.close_rounded, size: 14),
                                   onDeleted: () =>
                                       setState(() => _selectedPihak.remove(p)),
                                   backgroundColor: AppColors.primaryLight,
@@ -728,23 +728,21 @@ class _UndanganDialogState extends State<_UndanganDialog> {
                       const SizedBox(height: 8),
                     ],
 
-                    // Daftar checkbox pihak
+                    // Daftar checkbox pihak (jabatan struktural + bidang dinamis)
                     Container(
                       decoration: BoxDecoration(
-                        border: Border.all(
-                            color: AppColors.border, width: 0.75),
+                        border:
+                            Border.all(color: AppColors.border, width: 0.75),
                         borderRadius: BorderRadius.circular(10),
                         color: AppColors.surfaceGray,
                       ),
                       child: Column(
                         children: List.generate(
-                          kPihakTerkaitList.length,
+                          pihakOptions.length,
                           (i) {
-                            final item = kPihakTerkaitList[i];
-                            final isLast =
-                                i == kPihakTerkaitList.length - 1;
-                            final isChecked =
-                                _selectedPihak.contains(item);
+                            final item = pihakOptions[i];
+                            final isLast = i == pihakOptions.length - 1;
+                            final isChecked = _selectedPihak.contains(item);
                             return Column(
                               children: [
                                 CheckboxListTile(
@@ -766,8 +764,7 @@ class _UndanganDialogState extends State<_UndanganDialog> {
                                   controlAffinity:
                                       ListTileControlAffinity.leading,
                                   contentPadding:
-                                      const EdgeInsets.symmetric(
-                                          horizontal: 8),
+                                      const EdgeInsets.symmetric(horizontal: 8),
                                   activeColor: AppColors.primary,
                                   checkboxShape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(4),
@@ -775,9 +772,7 @@ class _UndanganDialogState extends State<_UndanganDialog> {
                                 ),
                                 if (!isLast)
                                   const Divider(
-                                      height: 0,
-                                      indent: 8,
-                                      endIndent: 8),
+                                      height: 0, indent: 8, endIndent: 8),
                               ],
                             );
                           },
@@ -805,8 +800,7 @@ class _UndanganDialogState extends State<_UndanganDialog> {
                             child: Text(
                               'Konfirmasi kehadiran (hadir/tidak hadir), bukti, dan delegasi diisi oleh masing-masing pihak yang diundang.',
                               style: TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF92400E)),
+                                  fontSize: 11, color: Color(0xFF92400E)),
                             ),
                           ),
                         ],
@@ -823,8 +817,8 @@ class _UndanganDialogState extends State<_UndanganDialog> {
           Container(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
             decoration: const BoxDecoration(
-              border: Border(
-                  top: BorderSide(color: AppColors.border, width: 0.5)),
+              border:
+                  Border(top: BorderSide(color: AppColors.border, width: 0.5)),
             ),
             child: Row(
               children: [
@@ -889,8 +883,7 @@ class _DatePickerField extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
         decoration: BoxDecoration(
           color: AppColors.surfaceGray,
           borderRadius: BorderRadius.circular(10),
@@ -905,9 +898,8 @@ class _DatePickerField extends StatelessWidget {
               _label,
               style: TextStyle(
                 fontSize: 12,
-                color: date != null
-                    ? AppColors.textPrimary
-                    : AppColors.textHint,
+                color:
+                    date != null ? AppColors.textPrimary : AppColors.textHint,
               ),
             ),
           ],
@@ -933,8 +925,7 @@ class _TimePickerField extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
         decoration: BoxDecoration(
           color: AppColors.surfaceGray,
           borderRadius: BorderRadius.circular(10),
@@ -949,9 +940,8 @@ class _TimePickerField extends StatelessWidget {
               _label,
               style: TextStyle(
                 fontSize: 12,
-                color: time != null
-                    ? AppColors.textPrimary
-                    : AppColors.textHint,
+                color:
+                    time != null ? AppColors.textPrimary : AppColors.textHint,
               ),
             ),
           ],

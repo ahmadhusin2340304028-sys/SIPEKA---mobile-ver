@@ -105,16 +105,20 @@ class CustomDrawer extends StatelessWidget {
                               ],
                             ),
                           ),
-
                           const SizedBox(width: 8),
-
                           Expanded(
                             child: Container(height: 0.5, color: dividerColor),
                           ),
                         ],
                       ),
                     ),
-
+                    _DrawerItem(
+                      icon: Icons.apartment_rounded,
+                      label: 'Kelola Bidang',
+                      route: AppRoutes.adminBidang,
+                      currentRoute: route,
+                      accentColor: AppColors.warning,
+                    ),
                     _DrawerItem(
                       icon: Icons.manage_search_rounded,
                       label: 'Kelola Kegiatan',
@@ -122,7 +126,6 @@ class CustomDrawer extends StatelessWidget {
                       currentRoute: route,
                       accentColor: AppColors.warning,
                     ),
-
                     _DrawerItem(
                       icon: Icons.mark_email_unread_rounded,
                       label: 'Kelola Undangan',
@@ -279,9 +282,8 @@ class _DrawerHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final borderColor = isDark ? const Color(0xFF334155) : AppColors.border;
-    final primaryText = isDark
-        ? const Color(0xFFE5E7EB)
-        : AppColors.textPrimary;
+    final primaryText =
+        isDark ? const Color(0xFFE5E7EB) : AppColors.textPrimary;
     final mutedText = isDark ? const Color(0xFF94A3B8) : AppColors.textMuted;
 
     return Container(
@@ -308,9 +310,7 @@ class _DrawerHeader extends StatelessWidget {
                   height: 22,
                 ),
               ),
-
               const SizedBox(width: 10),
-
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -319,9 +319,8 @@ class _DrawerHeader extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: isDark
-                          ? const Color(0xFF93C5FD)
-                          : AppColors.primary,
+                      color:
+                          isDark ? const Color(0xFF93C5FD) : AppColors.primary,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -352,13 +351,11 @@ class _DrawerHeader extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: isAdmin
-                            ? AppColors.warning
-                            : AppColors.primaryDark,
+                        color:
+                            isAdmin ? AppColors.warning : AppColors.primaryDark,
                       ),
                     ),
                   ),
-
                   if (isAdmin)
                     Positioned(
                       right: -2,
@@ -380,9 +377,7 @@ class _DrawerHeader extends StatelessWidget {
                     ),
                 ],
               ),
-
               const SizedBox(width: 10),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -396,7 +391,6 @@ class _DrawerHeader extends StatelessWidget {
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-
                     Text(
                       jabatan,
                       style: TextStyle(fontSize: 11, color: mutedText),
@@ -442,17 +436,15 @@ class _DrawerItem extends StatelessWidget {
     final activeColor = isDark && _accent == AppColors.primary
         ? const Color(0xFF93C5FD)
         : _accent;
-    final inactiveColor = isDark
-        ? const Color(0xFF94A3B8)
-        : AppColors.textMuted;
-    final inactiveTextColor = isDark
-        ? const Color(0xFFCBD5E1)
-        : AppColors.textSecondary;
+    final inactiveColor =
+        isDark ? const Color(0xFF94A3B8) : AppColors.textMuted;
+    final inactiveTextColor =
+        isDark ? const Color(0xFFCBD5E1) : AppColors.textSecondary;
     final activeBackground = isDark
         ? activeColor.withOpacity(0.16)
         : (_accent == AppColors.warning
-              ? const Color(0xFFFFFBEB)
-              : AppColors.primaryLight);
+            ? const Color(0xFFFFFBEB)
+            : AppColors.primaryLight);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
@@ -494,15 +486,15 @@ class _DrawerItem extends StatelessWidget {
                 ),
               )
             : _active
-            ? Container(
-                width: 3,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: activeColor,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              )
-            : null,
+                ? Container(
+                    width: 3,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: activeColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  )
+                : null,
         onTap: () {
           Navigator.pop(context);
 

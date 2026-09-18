@@ -59,7 +59,11 @@ class Kegiatan extends Model
      */
     public function getTotalRealisasiFisikAttribute(): float
     {
-        return (float) $this->realisasiFisik()->sum('nilai') ?? 0;
+        $realisasi = $this->relationLoaded('realisasiFisik')
+            ? $this->realisasiFisik
+            : $this->realisasiFisik()->get();
+
+        return (float) $realisasi->sum('nilai');
     }
 
     /**
@@ -67,7 +71,11 @@ class Kegiatan extends Model
      */
     public function getTotalRealisasiAnggaranAttribute(): float
     {
-        return (float) $this->realisasiAnggaran()->sum('nilai') ?? 0;
+        $realisasi = $this->relationLoaded('realisasiAnggaran')
+            ? $this->realisasiAnggaran
+            : $this->realisasiAnggaran()->get();
+
+        return (float) $realisasi->sum('nilai');
     }
 
     /**

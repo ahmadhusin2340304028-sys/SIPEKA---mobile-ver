@@ -89,11 +89,12 @@ class TentangScreen extends StatelessWidget {
                     backgroundColor: Colors.white,
                     child: CircleAvatar(
                       radius: 44,
-                      backgroundImage:  AssetImage("assets/images/logo_sipeka.png"),
+                      backgroundImage:
+                          AssetImage("assets/images/logo_sipeka.png"),
                     ),
                   ),
-                   SizedBox(height: 16),
-                   Text(
+                  SizedBox(height: 16),
+                  Text(
                     "SIPEKA",
                     style: TextStyle(
                       fontSize: 26,
@@ -102,7 +103,7 @@ class TentangScreen extends StatelessWidget {
                       letterSpacing: 1.2,
                     ),
                   ),
-                   Text(
+                  Text(
                     "Versi 1.0.0",
                     style: TextStyle(
                       color: Colors.white70,
@@ -123,7 +124,7 @@ class TentangScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-             const SizedBox(height: 10),
+            const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -165,31 +166,32 @@ class TentangScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 35,
-                      backgroundImage:  AssetImage("assets/images/ahmadhusin.jpeg"),
+                      backgroundImage:
+                          AssetImage("assets/images/ahmadhusin.jpeg"),
                     ),
-                     SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                           Text(
+                          Text(
                             "Ahmad Husin",
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                           SizedBox(height: 4),
-                           Text(
+                          SizedBox(height: 4),
+                          Text(
                             "Software Engginer",
                             style: TextStyle(
                               color: Colors.blue,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                           SizedBox(height: 8),
-                           Text("ahmadhusin.2340304028@gmail.com"),
-                           Text("0852-5687-5779"),
+                          SizedBox(height: 8),
+                          Text("ahmadhusin.2340304028@gmail.com"),
+                          Text("0852-5687-5779"),
                         ],
                       ),
                     ),
@@ -209,31 +211,31 @@ class TentangScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 35,
-                      backgroundImage:  AssetImage("assets/images/rangga.png"),
+                      backgroundImage: AssetImage("assets/images/rangga.png"),
                     ),
-                     SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                           Text(
+                          Text(
                             "Rangga Saputra",
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                           SizedBox(height: 4),
-                           Text(
+                          SizedBox(height: 4),
+                          Text(
                             "Frontend Developer",
                             style: TextStyle(
                               color: Colors.green,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                           SizedBox(height: 8),
-                           Text("ranggasaputra270504@gmail.com"),
-                           Text("081254834538"),
+                          SizedBox(height: 8),
+                          Text("ranggasaputra270504@gmail.com"),
+                          Text("081254834538"),
                         ],
                       ),
                     ),
@@ -253,31 +255,31 @@ class TentangScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 35,
-                      backgroundImage:  AssetImage("assets/images/putra.png"),
+                      backgroundImage: AssetImage("assets/images/putra.png"),
                     ),
-                     SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                           Text(
+                          Text(
                             "Adi Saputra",
                             style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                           SizedBox(height: 4),
-                           Text(
+                          SizedBox(height: 4),
+                          Text(
                             "UI/UX Designer",
                             style: TextStyle(
                               color: Colors.orange,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                           SizedBox(height: 8),
-                           Text("adisaaputraa19@gmail.com"),
-                           Text("0853-4610-1011"),
+                          SizedBox(height: 8),
+                          Text("adisaaputraa19@gmail.com"),
+                          Text("0853-4610-1011"),
                         ],
                       ),
                     ),

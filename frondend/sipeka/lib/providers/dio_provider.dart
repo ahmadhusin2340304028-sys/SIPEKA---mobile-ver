@@ -4,7 +4,8 @@ import 'package:sipeka/models/undangan_model.dart';
 
 class DioProvider {
   static String get baseApiUrl {
-    return 'http://10.0.2.2:8000/api';
+    return 'http://192.168.1.9:8000/api';
+    // return 'http://10.0.2.2:8000/api';
   }
 
   // dio_provider.dart — getToken() juga simpan user data
@@ -32,8 +33,6 @@ class DioProvider {
 
         return true;
       }
-      // print('Login gagal status: ${response.statusCode}');
-      // print('Login gagal body: ${response.data}');
       return false;
     } catch (error) {
       // print('Login request error: $error');
@@ -149,7 +148,7 @@ class DioProvider {
         ),
       );
 
-      print('getKegiatan status: ${response.statusCode}');
+      // print('getKegiatan status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final filters = response.data['filters'];
@@ -209,7 +208,7 @@ class DioProvider {
           },
         ),
       );
-      print('Fetched kegiatan detail data: ${response.data}'); // Debug log
+      // print('Fetched kegiatan detail data: ${response.data}'); // Debug log
 
       if (response.statusCode == 200) {
         return response.data['data'] as Map<String, dynamic>;

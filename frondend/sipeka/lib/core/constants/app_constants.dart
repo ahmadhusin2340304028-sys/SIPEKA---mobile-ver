@@ -13,6 +13,7 @@ class AppRoutes {
   // Admin routes
   static const String adminKegiatan = '/admin/kegiatan';
   static const String adminUndangan = '/admin/undangan';
+  static const String adminBidang = '/admin/bidang';
 }
 
 class AppStrings {
@@ -32,8 +33,17 @@ class AppStrings {
 class AppMonths {
   AppMonths._();
   static const List<String> list = [
-    'Januari', 'Februari', 'Maret', 'April',
-    'Mei', 'Juni', 'Juli', 'Agustus',
-    'September', 'Oktober', 'November', 'Desember',
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
   ];
 }

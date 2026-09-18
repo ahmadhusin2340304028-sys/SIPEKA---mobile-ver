@@ -4,6 +4,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bidang;
 use App\Models\Kegiatan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,13 +29,11 @@ class KegiatanController extends Controller
         $user  = $request->user();
         $query = Kegiatan::query();
 
-        $bidangOptions = Kegiatan::query()
-            ->whereNotNull('bidang')
-            ->where('bidang', '!=', '')
-            ->distinct()
-            ->orderBy('bidang')
-            ->pluck('bidang')
-            ->values();
+        // Daftar bidang untuk dropdown/filter diambil dari master data
+        // "bidang" yang dikelola Admin (menu Kelola Bidang), bukan lagi dari
+        // nilai unik kolom kegiatan.bidang. Dengan begini, bidang yang baru
+        // ditambahkan admin tapi belum punya kegiatan pun tetap muncul.
+        $bidangOptions = Bidang::orderBy('nama')->pluck('nama')->values();
 
         // ── Bidang Filter (access control) ──────────────────────────────────
         // if ($user->isStaffBidang()) {
@@ -143,7 +142,9 @@ class KegiatanController extends Controller
             'satuan'            => 'required|string|max:50',
             'target'            => 'required|numeric|min:0',
             'tahun'             => 'required|digits:4|integer|min:2020|max:2099',
-            'bidang'            => 'required|string|max:100',
+            // bidang wajib salah satu dari master data "bidang" yang dikelola
+            // Admin lewat menu Kelola Bidang — bukan lagi string bebas.
+            'bidang'            => 'required|string|exists:bidang,nama',
             'program'           => 'required|string|max:255',
             'kegiatan'          => 'required|string|max:255',
             'sub_kegiatan'      => 'required|string|max:255',
@@ -174,7 +175,9 @@ class KegiatanController extends Controller
             'satuan'            => 'sometimes|string|max:50',
             'target'            => 'sometimes|numeric|min:0',
             'tahun'             => 'sometimes|digits:4|integer|min:2020|max:2099',
-            'bidang'            => 'sometimes|string|max:100',
+            // bidang wajib salah satu dari master data "bidang" yang dikelola
+            // Admin lewat menu Kelola Bidang — bukan lagi string bebas.
+            'bidang'            => 'sometimes|string|exists:bidang,nama',
             'program'           => 'sometimes|string|max:255',
             'kegiatan'          => 'sometimes|string|max:255',
             'sub_kegiatan'      => 'sometimes|string|max:255',

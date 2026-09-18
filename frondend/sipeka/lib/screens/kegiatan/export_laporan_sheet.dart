@@ -14,18 +14,9 @@ import 'package:open_filex/open_filex.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_utils.dart';
 import '../../providers/dio_provider.dart';
+import '../../providers/bidang_provider.dart';
 
 // ─── Konstanta ────────────────────────────────────────────────────────────────
-
-const List<String> _kBidangList = [
-  'Semua',
-  'Perencanaan dan Keuangan',
-  'Umum dan Kepegawaian',
-  'Rehabilitasi Sosial',
-  'Perlindungan dan Jaminan Sosial',
-  'Pemberdayaan Sosial',
-  'Pemberdayaan Masyarakat',
-];
 
 const List<_MinFisikOption> _kMinFisikOptions = [
   _MinFisikOption(label: 'Semua', value: null),
@@ -70,6 +61,15 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
   bool _isExportingExcel = false;
   bool _isExportingPdf = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // ✅ Muat daftar bidang (master data) untuk dropdown filter di bawah.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BidangProvider>().loadBidang();
+    });
+  }
+
   List<int> get _tahunOptions {
     final now = DateTime.now().year;
     return List.generate(5, (i) => now - i);
@@ -85,7 +85,8 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
 
       final params = <String, dynamic>{'tahun': _selectedTahun};
       if (_selectedBidang != 'Semua') params['bidang'] = _selectedBidang;
-      if (_selectedMinFisik.value != null) params['min_fisik'] = _selectedMinFisik.value;
+      if (_selectedMinFisik.value != null)
+        params['min_fisik'] = _selectedMinFisik.value;
 
       final response = await Dio().get(
         '${DioProvider.baseApiUrl}/export/excel',
@@ -93,7 +94,8 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
-            'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Accept':
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           },
           responseType: ResponseType.bytes,
           receiveTimeout: const Duration(seconds: 60),
@@ -123,7 +125,8 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
 
       final params = <String, dynamic>{'tahun': _selectedTahun};
       if (_selectedBidang != 'Semua') params['bidang'] = _selectedBidang;
-      if (_selectedMinFisik.value != null) params['min_fisik'] = _selectedMinFisik.value;
+      if (_selectedMinFisik.value != null)
+        params['min_fisik'] = _selectedMinFisik.value;
 
       // Backend mengembalikan HTML → kita simpan sebagai .html
       // dan buka di browser (bisa di-print ke PDF dari browser)
@@ -181,6 +184,9 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
   @override
   Widget build(BuildContext context) {
     final screenH = MediaQuery.of(context).size.height;
+    // ✅ Daftar bidang untuk filter sekarang dinamis, mengikuti data yang
+    // diatur admin lewat menu "Kelola Bidang" — bukan lagi list hardcoded.
+    final bidangList = ['Semua', ...context.watch<BidangProvider>().namaList];
 
     return Container(
       height: screenH * 0.80,
@@ -201,10 +207,13 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
                   _sectionLabel('Seksi / Urusan'),
                   const SizedBox(height: 8),
                   _buildDropdown<String>(
-                    value: _selectedBidang,
-                    items: _kBidangList,
+                    value: bidangList.contains(_selectedBidang)
+                        ? _selectedBidang
+                        : 'Semua',
+                    items: bidangList,
                     labelBuilder: (v) => v,
-                    onChanged: (v) => setState(() => _selectedBidang = v ?? 'Semua'),
+                    onChanged: (v) =>
+                        setState(() => _selectedBidang = v ?? 'Semua'),
                   ),
                   const SizedBox(height: 18),
 
@@ -215,7 +224,8 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
                     value: _selectedTahun,
                     items: _tahunOptions,
                     labelBuilder: (v) => v.toString(),
-                    onChanged: (v) => setState(() => _selectedTahun = v ?? _selectedTahun),
+                    onChanged: (v) =>
+                        setState(() => _selectedTahun = v ?? _selectedTahun),
                   ),
                   const SizedBox(height: 18),
 
@@ -226,7 +236,8 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
                     value: _selectedMinFisik,
                     items: _kMinFisikOptions,
                     labelBuilder: (v) => v.label,
-                    onChanged: (v) => setState(() => _selectedMinFisik = v ?? _kMinFisikOptions.first),
+                    onChanged: (v) => setState(
+                        () => _selectedMinFisik = v ?? _kMinFisikOptions.first),
                   ),
                   const SizedBox(height: 28),
 
@@ -240,7 +251,9 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
                     icon: Icons.table_chart_rounded,
                     color: const Color(0xFF16A34A),
                     isLoading: _isExportingExcel,
-                    onTap: (_isExportingPdf || _isExportingExcel) ? null : _exportExcel,
+                    onTap: (_isExportingPdf || _isExportingExcel)
+                        ? null
+                        : _exportExcel,
                   ),
                   const SizedBox(height: 12),
                   _buildExportButton(
@@ -248,7 +261,9 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
                     icon: Icons.picture_as_pdf_rounded,
                     color: AppColors.danger,
                     isLoading: _isExportingPdf,
-                    onTap: (_isExportingPdf || _isExportingExcel) ? null : _exportPdf,
+                    onTap: (_isExportingPdf || _isExportingExcel)
+                        ? null
+                        : _exportPdf,
                     outlined: true,
                   ),
                   const SizedBox(height: 8),
@@ -389,7 +404,8 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
         children: [
           const Row(
             children: [
-              Icon(Icons.info_outline_rounded, size: 14, color: AppColors.primary),
+              Icon(Icons.info_outline_rounded,
+                  size: 14, color: AppColors.primary),
               SizedBox(width: 6),
               Text(
                 'Kriteria Laporan',
@@ -418,7 +434,8 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
           SizedBox(
             width: 100,
             child: Text(label,
-                style: const TextStyle(fontSize: 12, color: AppColors.primaryMid)),
+                style:
+                    const TextStyle(fontSize: 12, color: AppColors.primaryMid)),
           ),
           const Text(': ',
               style: TextStyle(fontSize: 12, color: AppColors.primaryMid)),
@@ -455,7 +472,8 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
               ? SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: color),
+                  child:
+                      CircularProgressIndicator(strokeWidth: 2, color: color),
                 )
               : Icon(icon, size: 18, color: color),
           label: Text(
@@ -464,7 +482,8 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
           ),
           style: OutlinedButton.styleFrom(
             side: BorderSide(color: color),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),
       );
@@ -479,7 +498,8 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
             ? const SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
               )
             : Icon(icon, size: 18),
         label: Text(
@@ -489,7 +509,8 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       ),
     );

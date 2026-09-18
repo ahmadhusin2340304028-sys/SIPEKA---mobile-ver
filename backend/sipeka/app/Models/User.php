@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 
@@ -16,6 +17,7 @@ class User extends Authenticatable
         'username',
         'password',
         'role',
+        'bidang_id',
     ];
 
     protected $hidden = [
@@ -32,6 +34,15 @@ class User extends Authenticatable
     /**
      * Bidang-based staff roles — hanya bisa kelola data sesuai bidangnya.
      * Key = role string di DB, Value = nilai bidang di tabel kegiatan.
+     *
+     * CATATAN (sejak fitur "Kelola Bidang" dengan akun staff terintegrasi):
+     * akun staff UTAMA tiap bidang sekarang terhubung lewat kolom
+     * users.bidang_id (lihat relasi bidang() & getBidang() di bawah) dan
+     * dikelola langsung dari menu "Kelola Bidang" — TIDAK lagi lewat peta
+     * ini. Peta ini tetap dipertahankan sebagai FALLBACK khusus untuk akun
+     * jabatan struktural yang belum dikelola lewat menu tsb (Kepala Dinas,
+     * Sekretaris, Kepala Bidang X, Kepala Sub Bagian Y) — di luar cakupan
+     * fitur Kelola Bidang saat ini.
      */
     const BIDANG_ROLE_MAP = [
         'Admin'                                 => 'Admin', // Admin bisa akses semua bidang   
@@ -77,11 +88,21 @@ class User extends Authenticatable
 
     /**
      * Apakah user adalah staff bidang (bukan admin/kadis/sekretaris).
+     * Diprioritaskan dari relasi bidang_id (dikelola lewat menu "Kelola
+     * Bidang"), fallback ke peta role lama untuk akun jabatan struktural
+     * yang belum dikelola lewat menu tsb.
      */
     public function isStaffBidang(): bool
     {
-        return !$this->canViewAll()
-            && array_key_exists($this->role, self::BIDANG_ROLE_MAP);
+        if ($this->canViewAll()) {
+            return false;
+        }
+
+        if ($this->bidang_id !== null) {
+            return true;
+        }
+
+        return array_key_exists($this->role, self::BIDANG_ROLE_MAP);
     }
 
     /**
@@ -90,10 +111,16 @@ class User extends Authenticatable
      */
     public function getBidang(): ?string
     {
-        if (!$this->isStaffBidang()) {
+        if ($this->canViewAll()) {
             return null;
         }
 
+        // Sumber utama: relasi ke tabel bidang (dikelola lewat "Kelola Bidang").
+        if ($this->bidang_id !== null) {
+            return $this->bidang?->nama;
+        }
+
+        // Fallback: akun jabatan struktural lama, masih pakai peta hardcoded.
         return self::BIDANG_ROLE_MAP[$this->role] ?? null;
     }
 
@@ -112,6 +139,15 @@ class User extends Authenticatable
     }
 
     // ─── Relationships ────────────────────────────────────────────────────────
+
+    /**
+     * Bidang yang menjadi tanggung jawab utama akun ini (kalau ada).
+     * Dikelola langsung lewat form akun staff di menu "Kelola Bidang".
+     */
+    public function bidang(): BelongsTo
+    {
+        return $this->belongsTo(Bidang::class, 'bidang_id');
+    }
 
     public function realisasiFisik(): HasMany
     {
