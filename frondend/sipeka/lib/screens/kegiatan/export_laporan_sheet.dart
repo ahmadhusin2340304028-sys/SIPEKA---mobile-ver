@@ -3,14 +3,12 @@
 // Bottom sheet dengan filter laporan + tombol Export Excel & PDF.
 // Dipanggil dari KegiatanScreen via floating action button.
 
-import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:open_filex/open_filex.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/app_utils.dart';
 import '../../providers/dio_provider.dart';
@@ -54,6 +52,7 @@ class _ExportLaporanSheet extends StatefulWidget {
 }
 
 class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
+  static const _exportChannel = MethodChannel('com.sipeka.app/export');
   String _selectedBidang = 'Semua';
   int _selectedTahun = DateTime.now().year;
   _MinFisikOption _selectedMinFisik = _kMinFisikOptions.first;
@@ -128,15 +127,13 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
       if (_selectedMinFisik.value != null)
         params['min_fisik'] = _selectedMinFisik.value;
 
-      // Backend mengembalikan HTML → kita simpan sebagai .html
-      // dan buka di browser (bisa di-print ke PDF dari browser)
       final response = await Dio().get(
         '${DioProvider.baseApiUrl}/export/pdf',
         queryParameters: params,
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
-            'Accept': 'text/html',
+            'Accept': 'application/pdf',
           },
           responseType: ResponseType.bytes,
           receiveTimeout: const Duration(seconds: 60),
@@ -145,7 +142,7 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
 
       if (response.statusCode == 200) {
         final bytes = Uint8List.fromList(response.data as List<int>);
-        await _saveAndOpen(bytes, 'laporan_kegiatan_$_selectedTahun.html');
+        await _saveAndOpen(bytes, 'laporan_kegiatan_$_selectedTahun.pdf');
       } else {
         throw Exception('Server error ${response.statusCode}');
       }
@@ -159,23 +156,21 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
   // ── Simpan file & buka ──────────────────────────────────────────────────
 
   Future<void> _saveAndOpen(Uint8List bytes, String filename) async {
-    Directory dir;
-    if (Platform.isAndroid) {
-      dir = Directory('/storage/emulated/0/Download');
-      if (!dir.existsSync()) dir = await getTemporaryDirectory();
-    } else {
-      dir = await getApplicationDocumentsDirectory();
-    }
-
-    final path = '${dir.path}/$filename';
-    final file = File(path);
-    await file.writeAsBytes(bytes);
+    final result = await _exportChannel.invokeMethod<String>(
+      'saveAndOpen',
+      <String, dynamic>{
+        'bytes': bytes,
+        'filename': filename,
+        'mimeType': filename.endsWith('.pdf')
+            ? 'application/pdf'
+            : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      },
+    );
 
     if (mounted) {
       Navigator.pop(context);
-      AppUtils.showSuccess(context, 'File disimpan: $path');
-      await Future.delayed(const Duration(milliseconds: 600));
-      await OpenFilex.open(path);
+      AppUtils.showSuccess(context,
+          'File disimpan di Download${result == null ? '' : ': $result'}');
     }
   }
 
@@ -257,7 +252,7 @@ class _ExportLaporanSheetState extends State<_ExportLaporanSheet> {
                   ),
                   const SizedBox(height: 12),
                   _buildExportButton(
-                    label: 'Export PDF (HTML)',
+                    label: 'Export PDF',
                     icon: Icons.picture_as_pdf_rounded,
                     color: AppColors.danger,
                     isLoading: _isExportingPdf,

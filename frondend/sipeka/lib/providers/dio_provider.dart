@@ -4,7 +4,7 @@ import 'package:sipeka/models/undangan_model.dart';
 
 class DioProvider {
   static String get baseApiUrl {
-    return 'http://192.168.1.9:8000/api';
+    return 'http://192.168.1.6:8000/api';
     // return 'http://10.0.2.2:8000/api';
   }
 
